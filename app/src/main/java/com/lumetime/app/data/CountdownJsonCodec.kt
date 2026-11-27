@@ -1,6 +1,7 @@
 package com.lumetime.app.data
 
 import com.lumetime.app.model.CountdownCategory
+import com.lumetime.app.model.CountdownIcon
 import com.lumetime.app.model.CountdownItem
 import com.lumetime.app.model.CountdownMode
 import com.lumetime.app.model.RepeatRule
@@ -61,8 +62,10 @@ object CountdownJsonCodec {
                     category = category,
                     accentHex = obj.optString("accentHex", "#67E8F9"),
                     isPinned = obj.optBoolean("isPinned", false),
-                    emoji = obj.optString("emoji", category.defaultEmoji)
-                        .ifBlank { category.defaultEmoji },
+                    emoji = CountdownIcon.fromStored(
+                        obj.optString("emoji", ""),
+                        category
+                    ).id,
                     reminderEnabled = obj.optBoolean("reminderEnabled", false)
                 )
             )

@@ -18,6 +18,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.lumetime.app.core.PrecisionClockTicker
 import com.lumetime.app.core.ReminderScheduler
 import com.lumetime.app.core.TimeCalculator
 import com.lumetime.app.data.CountdownFilter
@@ -121,13 +122,14 @@ class MainActivity : AppCompatActivity() {
 
     private val tickRunnable = object : Runnable {
         override fun run() {
-            val now = System.currentTimeMillis()
-            updateYearPulse(now)
-            updateHeroCountdown(now, animateRoll = true)
-            countdownAdapter.refreshTick(now)
+            val rawNow = System.currentTimeMillis()
+            val snappedNow = PrecisionClockTicker.snapNowToSecond(rawNow)
+            updateYearPulse(snappedNow)
+            updateHeroCountdown(snappedNow, animateRoll = true)
+            countdownAdapter.refreshTick(snappedNow)
 
-            val delayToNextSecond = 1000L - (now % 1000L)
-            mainHandler.postDelayed(this, delayToNextSecond.coerceAtLeast(150L))
+            val delay = PrecisionClockTicker.nextMidpointDelayMillis(System.currentTimeMillis())
+            mainHandler.postDelayed(this, delay)
         }
     }
 
@@ -569,7 +571,17 @@ class MainActivity : AppCompatActivity() {
             item.isPinned -> getString(R.string.pinned_hero_label)
             else -> "UP NEXT"
         }
-        binding.tvHeroEmoji.text = item.emoji
+        val heroIcon = item.resolveIcon()
+        binding.heroIconContainer.background = android.graphics.drawable.GradientDrawable().apply {
+            shape = android.graphics.drawable.GradientDrawable.OVAL
+            setColor(ThemeManager.withAlpha(itemAccent, if (palette.isDark) 0x33 else 0x22))
+            setStroke(
+                ThemeManager.dp(this@MainActivity, 1f).toInt().coerceAtLeast(1),
+                ThemeManager.withAlpha(itemAccent, 0x66)
+            )
+        }
+        binding.ivHeroIcon.setImageResource(heroIcon.drawableRes)
+        binding.ivHeroIcon.setColorFilter(itemAccent)
         binding.tvHeroTitle.text = item.title
 
         binding.rollingDays.setValue(

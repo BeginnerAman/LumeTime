@@ -20,18 +20,19 @@ enum class RepeatRule {
 /**
  * Semantic category used for filtering, visual badges, and quick templates.
  */
-enum class CountdownCategory(val label: String, val defaultEmoji: String) {
-    GENERAL("General", "⏳"),
-    EXAM("Exam", "📚"),
-    BIRTHDAY("Birthday", "🎂"),
-    TRAVEL("Travel", "✈️"),
-    GOAL("Goal", "🎯"),
-    RENEWAL("Renewal", "🔔"),
-    MILESTONE("Milestone", "✨")
+enum class CountdownCategory(val label: String) {
+    GENERAL("General"),
+    EXAM("Exam"),
+    BIRTHDAY("Birthday"),
+    TRAVEL("Travel"),
+    GOAL("Goal"),
+    RENEWAL("Renewal"),
+    MILESTONE("Milestone")
 }
 
 /**
  * Persistent user countdown or milestone entry.
+ * Note: [emoji] stores the [CountdownIcon.id] (or legacy emoji string, auto-migrated via [resolveIcon]).
  */
 data class CountdownItem(
     val id: String,
@@ -44,9 +45,11 @@ data class CountdownItem(
     val category: CountdownCategory = CountdownCategory.GENERAL,
     val accentHex: String = "#67E8F9",
     val isPinned: Boolean = false,
-    val emoji: String = category.defaultEmoji,
+    val emoji: String = CountdownIcon.forCategory(category).id,
     val reminderEnabled: Boolean = false
-)
+) {
+    fun resolveIcon(): CountdownIcon = CountdownIcon.fromStored(emoji, category)
+}
 
 /**
  * Computed breakdown for a countdown/count-up item at a specific instant.

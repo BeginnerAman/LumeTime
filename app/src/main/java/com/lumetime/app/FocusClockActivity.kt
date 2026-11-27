@@ -17,6 +17,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
+import com.lumetime.app.core.PrecisionClockTicker
 import com.lumetime.app.core.ReminderScheduler
 import com.lumetime.app.core.TimeCalculator
 import com.lumetime.app.data.CountdownStore
@@ -60,11 +61,12 @@ class FocusClockActivity : AppCompatActivity() {
 
     private val tickRunnable = object : Runnable {
         override fun run() {
-            val now = System.currentTimeMillis()
-            renderCountdown(now, animate = !firstRender)
+            val rawNow = System.currentTimeMillis()
+            val snappedNow = PrecisionClockTicker.snapNowToSecond(rawNow)
+            renderCountdown(snappedNow, animate = !firstRender)
             firstRender = false
-            val delay = 1000L - (now % 1000L)
-            mainHandler.postDelayed(this, delay.coerceAtLeast(150L))
+            val delay = PrecisionClockTicker.nextMidpointDelayMillis(System.currentTimeMillis())
+            mainHandler.postDelayed(this, delay)
         }
     }
 
@@ -292,7 +294,8 @@ class FocusClockActivity : AppCompatActivity() {
         binding.tvFocusCategoryBadge.background = ThemeManager.tagDrawable(this, palette)
         binding.tvFocusCategoryBadge.setTextColor(displayAccent)
 
-        binding.tvFocusEmoji.text = item.emoji
+        binding.ivFocusIcon.setImageResource(item.resolveIcon().drawableRes)
+        binding.ivFocusIcon.setColorFilter(displayAccent)
         binding.tvFocusTitle.text = item.title
 
         binding.focusProgressRing.setColors(

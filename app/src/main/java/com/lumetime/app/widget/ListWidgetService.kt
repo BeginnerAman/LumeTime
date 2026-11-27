@@ -85,7 +85,8 @@ private class ListWidgetFactory(
 
         return RemoteViews(context.packageName, R.layout.item_widget_countdown).apply {
             setInt(R.id.widgetRowRoot, "setBackgroundResource", rowBg)
-            setTextViewText(R.id.tvWidgetRowEmoji, item.emoji)
+            setImageViewResource(R.id.ivWidgetRowIcon, item.resolveIcon().drawableRes)
+            setInt(R.id.ivWidgetRowIcon, "setColorFilter", accentText)
             setTextViewText(R.id.tvWidgetRowTitle, item.title)
             setTextColor(R.id.tvWidgetRowTitle, primaryText)
             setTextViewText(

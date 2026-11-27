@@ -95,8 +95,8 @@ class CountdownAdapter(
             if (fullBind) {
                 val context = binding.root.context
                 binding.cardRoot.background = ThemeManager.cardDrawable(context, pal, isHero = item.isPinned)
-                binding.tvEmojiBadge.text = item.emoji
-                binding.tvEmojiBadge.background = GradientDrawable().apply {
+                val icon = item.resolveIcon()
+                binding.iconBadgeContainer.background = GradientDrawable().apply {
                     shape = GradientDrawable.OVAL
                     setColor(ThemeManager.withAlpha(itemAccent, if (pal.isDark) 0x33 else 0x22))
                     setStroke(
@@ -104,6 +104,8 @@ class CountdownAdapter(
                         ThemeManager.withAlpha(itemAccent, 0x66)
                     )
                 }
+                binding.ivItemIcon.setImageResource(icon.drawableRes)
+                binding.ivItemIcon.setColorFilter(itemAccent)
 
                 binding.tvItemTitle.text = item.title
                 binding.tvItemTitle.setTextColor(pal.textPrimary)

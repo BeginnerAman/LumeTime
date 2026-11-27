@@ -24,7 +24,6 @@ class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         val itemId = intent?.getStringExtra(ReminderScheduler.EXTRA_REMINDER_ID) ?: return
         val title = intent.getStringExtra(ReminderScheduler.EXTRA_REMINDER_TITLE).orEmpty()
-        val emoji = intent.getStringExtra(ReminderScheduler.EXTRA_REMINDER_EMOJI).orEmpty()
         val stage = intent.getStringExtra(ReminderScheduler.EXTRA_REMINDER_STAGE)
             ?: ReminderScheduler.STAGE_EVENT_TIME
 
@@ -56,7 +55,7 @@ class ReminderReceiver : BroadcastReceiver() {
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_sparkle)
-            .setContentTitle("$emoji $title".trim())
+            .setContentTitle(title.trim())
             .setContentText(bodyText)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)

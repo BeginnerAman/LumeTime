@@ -2,6 +2,7 @@ package com.lumetime.app.data
 
 import com.lumetime.app.core.TimeCalculator
 import com.lumetime.app.model.CountdownCategory
+import com.lumetime.app.model.CountdownIcon
 import com.lumetime.app.model.CountdownItem
 import com.lumetime.app.model.CountdownMode
 import com.lumetime.app.model.RepeatRule
@@ -33,7 +34,7 @@ class CountdownStoreTest {
                 category = CountdownCategory.EXAM,
                 accentHex = "#FB7185",
                 isPinned = true,
-                emoji = "📚",
+                emoji = CountdownIcon.BOOK.id,
                 reminderEnabled = true
             ),
             CountdownItem(
@@ -47,7 +48,7 @@ class CountdownStoreTest {
                 category = CountdownCategory.MILESTONE,
                 accentHex = "#34D399",
                 isPinned = false,
-                emoji = "🔥",
+                emoji = CountdownIcon.FLAME.id,
                 reminderEnabled = false
             )
         )
@@ -76,7 +77,7 @@ class CountdownStoreTest {
             createdAtMillis = now,
             category = CountdownCategory.TRAVEL,
             isPinned = true,
-            emoji = "✈️"
+            emoji = CountdownIcon.PLANE.id
         )
         val afterAdd = store.upsert(newItem)
         assertEquals(4, afterAdd.size)

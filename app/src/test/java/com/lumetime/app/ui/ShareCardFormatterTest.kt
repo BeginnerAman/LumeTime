@@ -39,7 +39,7 @@ class ShareCardFormatterTest {
         val futureCopy = ShareCardGenerator.buildCountdownCopy(futureItem, futureBreakdown, "Dec 7, 2026")
 
         assertEquals("EXAM • COUNTDOWN", futureCopy.badge)
-        assertEquals("📚 Final Exam", futureCopy.title)
+        assertEquals("Final Exam", futureCopy.title)
         assertEquals("10d", futureCopy.heroNumber)
         assertEquals("05h 00m", futureCopy.heroUnit)
         assertTrue(futureCopy.subline.contains("245 hours left"))

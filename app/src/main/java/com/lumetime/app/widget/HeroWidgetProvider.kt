@@ -14,6 +14,7 @@ import com.lumetime.app.MainActivity
 import com.lumetime.app.R
 import com.lumetime.app.core.TimeCalculator
 import com.lumetime.app.data.CountdownStore
+import com.lumetime.app.model.CountdownIcon
 import java.util.Locale
 
 /**
@@ -72,7 +73,8 @@ class HeroWidgetProvider : AppWidgetProvider() {
                         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                     )
                     views.setOnClickPendingIntent(R.id.widgetHeroRoot, mainPending)
-                    views.setTextViewText(R.id.tvWidgetHeroEmoji, "⏳")
+                    views.setImageViewResource(R.id.ivWidgetHeroIcon, CountdownIcon.HOURGLASS.drawableRes)
+                    views.setInt(R.id.ivWidgetHeroIcon, "setColorFilter", accentText)
                     views.setTextViewText(R.id.tvWidgetHeroTag, "LUMETIME")
                     views.setTextViewText(R.id.tvWidgetHeroTitle, "Tap to add a countdown")
                     views.setTextViewText(R.id.tvWidgetHeroDays, "--")
@@ -90,7 +92,8 @@ class HeroWidgetProvider : AppWidgetProvider() {
                     )
                     views.setOnClickPendingIntent(R.id.widgetHeroRoot, clickPending)
 
-                    views.setTextViewText(R.id.tvWidgetHeroEmoji, hero.emoji)
+                    views.setImageViewResource(R.id.ivWidgetHeroIcon, hero.resolveIcon().drawableRes)
+                    views.setInt(R.id.ivWidgetHeroIcon, "setColorFilter", accentText)
                     views.setTextViewText(
                         R.id.tvWidgetHeroTag,
                         when {

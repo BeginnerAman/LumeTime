@@ -140,11 +140,12 @@
                         android:gravity="center"
                         android:orientation="vertical">
 
-                        <TextView
-                            android:id="@+id/tvFocusEmoji"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textSize="32sp" />
+                        <ImageView
+                            android:id="@+id/ivFocusIcon"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_icon_hourglass" />
 
                         <TextView
                             android:id="@+id/tvFocusRingPercent"

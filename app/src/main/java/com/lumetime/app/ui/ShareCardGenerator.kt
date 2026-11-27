@@ -82,7 +82,7 @@ object ShareCardGenerator {
 
         return PosterCopy(
             badge = badge,
-            title = "${item.emoji} ${item.title}",
+            title = item.title,
             heroNumber = heroNumber,
             heroUnit = heroUnit,
             subline = subline,

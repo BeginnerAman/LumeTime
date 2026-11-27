@@ -12,12 +12,16 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.lumetime.app.R
+import com.lumetime.app.core.PrecisionClockTicker
 import com.lumetime.app.core.TimeCalculator
 import com.lumetime.app.databinding.DialogCountdownEditorBinding
 import com.lumetime.app.model.CountdownCategory
+import com.lumetime.app.model.CountdownIcon
 import com.lumetime.app.model.CountdownItem
 import com.lumetime.app.model.CountdownMode
 import com.lumetime.app.model.RepeatRule
@@ -34,7 +38,7 @@ object CountdownEditorDialog {
     private data class QuickTemplate(
         val label: String,
         val title: String,
-        val emoji: String,
+        val iconId: String,
         val category: CountdownCategory,
         val mode: CountdownMode,
         val repeatRule: RepeatRule,
@@ -42,15 +46,14 @@ object CountdownEditorDialog {
     )
 
     private val quickTemplates = listOf(
-        QuickTemplate("🎉 New Year", "New Year", "🎉", CountdownCategory.GENERAL, CountdownMode.COUNTDOWN, RepeatRule.YEARLY, 0),
-        QuickTemplate("📚 Exam", "Exam Day", "📚", CountdownCategory.EXAM, CountdownMode.COUNTDOWN, RepeatRule.NONE, 30),
-        QuickTemplate("🎂 Birthday", "Birthday", "🎂", CountdownCategory.BIRTHDAY, CountdownMode.COUNTDOWN, RepeatRule.YEARLY, 45),
-        QuickTemplate("✈️ Trip", "Dream Trip", "✈️", CountdownCategory.TRAVEL, CountdownMode.COUNTDOWN, RepeatRule.NONE, 14),
-        QuickTemplate("🎯 30d Goal", "30-Day Goal", "🎯", CountdownCategory.GOAL, CountdownMode.COUNTDOWN, RepeatRule.NONE, 30),
-        QuickTemplate("✨ Streak", "Habit Streak", "✨", CountdownCategory.MILESTONE, CountdownMode.COUNT_UP, RepeatRule.NONE, 0)
+        QuickTemplate("New Year", "New Year", CountdownIcon.SPARKLE.id, CountdownCategory.GENERAL, CountdownMode.COUNTDOWN, RepeatRule.YEARLY, 0),
+        QuickTemplate("Exam", "Exam Day", CountdownIcon.BOOK.id, CountdownCategory.EXAM, CountdownMode.COUNTDOWN, RepeatRule.NONE, 30),
+        QuickTemplate("Birthday", "Birthday", CountdownIcon.CAKE.id, CountdownCategory.BIRTHDAY, CountdownMode.COUNTDOWN, RepeatRule.YEARLY, 45),
+        QuickTemplate("Trip", "Dream Trip", CountdownIcon.PLANE.id, CountdownCategory.TRAVEL, CountdownMode.COUNTDOWN, RepeatRule.NONE, 14),
+        QuickTemplate("30d Goal", "30-Day Goal", CountdownIcon.TARGET.id, CountdownCategory.GOAL, CountdownMode.COUNTDOWN, RepeatRule.NONE, 30),
+        QuickTemplate("Streak", "Habit Streak", CountdownIcon.FLAME.id, CountdownCategory.MILESTONE, CountdownMode.COUNT_UP, RepeatRule.NONE, 0)
     )
 
-    private val emojiChoices = listOf("⏳", "🎯", "📚", "🎂", "✈️", "🔔", "✨", "❤️", "🔥", "🎓")
     private val accentHexChoices = listOf(
         "#67E8F9",
         "#A78BFA",
@@ -91,7 +94,7 @@ object CountdownEditorDialog {
         var mode = existing?.mode ?: CountdownMode.COUNTDOWN
         var repeatRule = existing?.repeatRule ?: RepeatRule.NONE
         var category = existing?.category ?: CountdownCategory.GENERAL
-        var emoji = existing?.emoji ?: category.defaultEmoji
+        var selectedIconId = existing?.resolveIcon()?.id ?: CountdownIcon.forCategory(category).id
         var accentHex = existing?.accentHex ?: accentHexChoices.first()
         var isPinned = existing?.isPinned ?: false
         var reminderEnabled = existing?.reminderEnabled ?: false
@@ -179,24 +182,44 @@ object CountdownEditorDialog {
                 }
             }
 
-            // Emoji chips
+            // Vector Icon chips (zero raw emojis)
             binding.emojiContainer.removeAllViews()
-            emojiChoices.forEach { choice ->
-                val active = choice == emoji
-                val chip = makeChip(context, choice, active, palette) {
-                    emoji = choice
-                    renderEditor()
+            val iconPillSize = ThemeManager.dp(context, 40f).toInt()
+            val iconGlyphSize = ThemeManager.dp(context, 20f).toInt()
+            val iconMargin = ThemeManager.dp(context, 8f).toInt()
+            CountdownIcon.entries.forEach { icon ->
+                val active = icon.id == selectedIconId
+                val pill = FrameLayout(context).apply {
+                    layoutParams = LinearLayout.LayoutParams(iconPillSize, iconPillSize).apply {
+                        marginEnd = iconMargin
+                    }
+                    background = if (active) {
+                        ThemeManager.activeChipDrawable(context, palette)
+                    } else {
+                        ThemeManager.pillDrawable(context, palette)
+                    }
+                    val iv = ImageView(context).apply {
+                        layoutParams = FrameLayout.LayoutParams(iconGlyphSize, iconGlyphSize, Gravity.CENTER)
+                        setImageResource(icon.drawableRes)
+                        setColorFilter(if (active) Color.WHITE else palette.textPrimary)
+                    }
+                    addView(iv)
+                    setOnClickListener {
+                        ThemeManager.performSoftTick(it)
+                        selectedIconId = icon.id
+                        renderEditor()
+                    }
                 }
-                binding.emojiContainer.addView(chip)
+                binding.emojiContainer.addView(pill)
             }
 
             // Category chips
             binding.categoryContainer.removeAllViews()
             CountdownCategory.entries.forEach { cat ->
                 val active = cat == category
-                val chip = makeChip(context, "${cat.defaultEmoji} ${cat.label}", active, palette) {
+                val chip = makeChip(context, cat.label, active, palette) {
                     category = cat
-                    if (existing == null) emoji = cat.defaultEmoji
+                    if (existing == null) selectedIconId = CountdownIcon.forCategory(cat).id
                     renderEditor()
                 }
                 binding.categoryContainer.addView(chip)
@@ -272,9 +295,12 @@ object CountdownEditorDialog {
                             selectedCal.set(Calendar.HOUR_OF_DAY, 9)
                             selectedCal.set(Calendar.MINUTE, 0)
                             selectedCal.set(Calendar.SECOND, 0)
+                            selectedCal.set(Calendar.MILLISECOND, 0)
+                        } else {
+                            selectedCal.set(Calendar.MILLISECOND, 0)
                         }
                     }
-                    emoji = tpl.emoji
+                    selectedIconId = tpl.iconId
                     category = tpl.category
                     mode = tpl.mode
                     repeatRule = tpl.repeatRule
@@ -341,19 +367,22 @@ object CountdownEditorDialog {
             }
 
             ThemeManager.performTapHaptic(it)
-            val saveNow = System.currentTimeMillis()
+            val saveNow = PrecisionClockTicker.normalizeToWholeSecond(System.currentTimeMillis())
+            val cleanTarget = PrecisionClockTicker.normalizeToWholeSecond(selectedCal.timeInMillis)
             val item = CountdownItem(
                 id = existing?.id ?: UUID.randomUUID().toString(),
                 title = rawTitle,
-                targetEpochMillis = selectedCal.timeInMillis,
-                startEpochMillis = existing?.startEpochMillis ?: saveNow,
+                targetEpochMillis = cleanTarget,
+                startEpochMillis = PrecisionClockTicker.normalizeToWholeSecond(
+                    existing?.startEpochMillis ?: saveNow
+                ),
                 createdAtMillis = existing?.createdAtMillis ?: saveNow,
                 mode = mode,
                 repeatRule = if (mode == CountdownMode.COUNT_UP) RepeatRule.NONE else repeatRule,
                 category = category,
                 accentHex = accentHex,
                 isPinned = isPinned,
-                emoji = emoji,
+                emoji = selectedIconId,
                 reminderEnabled = if (mode == CountdownMode.COUNT_UP) false else reminderEnabled
             )
             onSave(item)

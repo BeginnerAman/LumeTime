@@ -1,8 +1,10 @@
 package com.lumetime.app.data
 
 import android.content.Context
+import com.lumetime.app.core.PrecisionClockTicker
 import com.lumetime.app.core.TimeCalculator
 import com.lumetime.app.model.CountdownCategory
+import com.lumetime.app.model.CountdownIcon
 import com.lumetime.app.model.CountdownItem
 import com.lumetime.app.model.CountdownMode
 import com.lumetime.app.model.RepeatRule
@@ -17,7 +19,7 @@ sealed class CountdownFilter(val label: String) {
     data object All : CountdownFilter("All")
     data object CountUp : CountdownFilter("Count-Up")
     data class Category(val category: CountdownCategory) :
-        CountdownFilter("${category.defaultEmoji} ${category.label}")
+        CountdownFilter(category.label)
 }
 
 enum class CountdownSortMode(val label: String) {
@@ -237,7 +239,8 @@ class CountdownStore(
         }
 
         fun createStarterItems(nowMillis: Long): List<CountdownItem> {
-            val cal = Calendar.getInstance().apply { timeInMillis = nowMillis }
+            val cleanNow = PrecisionClockTicker.normalizeToWholeSecond(nowMillis)
+            val cal = Calendar.getInstance().apply { timeInMillis = cleanNow }
             val nextYear = cal.get(Calendar.YEAR) + 1
             val newYearMillis = Calendar.getInstance().apply {
                 clear()
@@ -246,48 +249,48 @@ class CountdownStore(
                 set(Calendar.DAY_OF_MONTH, 1)
             }.timeInMillis
 
-            val sprintTarget = nowMillis + 30L * TimeCalculator.MILLIS_PER_DAY
-            val streakStart = nowMillis - 7L * TimeCalculator.MILLIS_PER_DAY
+            val sprintTarget = cleanNow + 30L * TimeCalculator.MILLIS_PER_DAY
+            val streakStart = cleanNow - 7L * TimeCalculator.MILLIS_PER_DAY
 
             return listOf(
                 CountdownItem(
                     id = UUID.randomUUID().toString(),
                     title = "New Year $nextYear",
                     targetEpochMillis = newYearMillis,
-                    startEpochMillis = nowMillis,
-                    createdAtMillis = nowMillis,
+                    startEpochMillis = cleanNow,
+                    createdAtMillis = cleanNow,
                     mode = CountdownMode.COUNTDOWN,
                     repeatRule = RepeatRule.YEARLY,
                     category = CountdownCategory.GENERAL,
                     accentHex = "#67E8F9",
                     isPinned = true,
-                    emoji = "🎉"
+                    emoji = CountdownIcon.SPARKLE.id
                 ),
                 CountdownItem(
                     id = UUID.randomUUID().toString(),
                     title = "30-Day Focus Sprint",
                     targetEpochMillis = sprintTarget,
-                    startEpochMillis = nowMillis,
-                    createdAtMillis = nowMillis,
+                    startEpochMillis = cleanNow,
+                    createdAtMillis = cleanNow,
                     mode = CountdownMode.COUNTDOWN,
                     repeatRule = RepeatRule.NONE,
                     category = CountdownCategory.GOAL,
                     accentHex = "#A78BFA",
                     isPinned = false,
-                    emoji = "🎯"
+                    emoji = CountdownIcon.TARGET.id
                 ),
                 CountdownItem(
                     id = UUID.randomUUID().toString(),
                     title = "Daily Journey Streak",
                     targetEpochMillis = streakStart,
                     startEpochMillis = streakStart,
-                    createdAtMillis = nowMillis,
+                    createdAtMillis = cleanNow,
                     mode = CountdownMode.COUNT_UP,
                     repeatRule = RepeatRule.NONE,
                     category = CountdownCategory.MILESTONE,
                     accentHex = "#34D399",
                     isPinned = false,
-                    emoji = "✨"
+                    emoji = CountdownIcon.FLAME.id
                 )
             )
         }
