@@ -122,6 +122,17 @@
                         android:paddingVertical="4dp"
                         android:textSize="11sp"
                         android:textStyle="bold" />
+
+                    <ImageView
+                        android:id="@+id/btnShareYearPulse"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_marginStart="6dp"
+                        android:clickable="true"
+                        android:contentDescription="@string/share_card"
+                        android:focusable="true"
+                        android:padding="5dp"
+                        android:src="@drawable/ic_share" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -240,6 +251,17 @@
                         android:paddingVertical="4dp"
                         android:textSize="11sp"
                         android:textStyle="bold" />
+
+                    <ImageView
+                        android:id="@+id/btnEditHero"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_marginStart="6dp"
+                        android:clickable="true"
+                        android:contentDescription="@string/edit_short"
+                        android:focusable="true"
+                        android:padding="5dp"
+                        android:src="@drawable/ic_edit" />
                 </LinearLayout>
 
                 <LinearLayout

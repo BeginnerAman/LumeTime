@@ -22,6 +22,7 @@ import java.util.Locale
  */
 class CountdownAdapter(
     private val onCardClick: (CountdownItem) -> Unit,
+    private val onCardLongClick: (CountdownItem) -> Unit,
     private val onPinClick: (CountdownItem) -> Unit
 ) : ListAdapter<CountdownItem, CountdownAdapter.CountdownViewHolder>(DiffCallback) {
 
@@ -112,9 +113,15 @@ class CountdownAdapter(
                 )
                 binding.btnPinItem.alpha = if (item.isPinned) 1f else 0.55f
 
+                FocusAnimations.attachGlassPress(binding.root)
                 binding.root.setOnClickListener {
                     ThemeManager.performTapHaptic(it)
                     onCardClick(item)
+                }
+                binding.root.setOnLongClickListener {
+                    ThemeManager.performTapHaptic(it)
+                    onCardLongClick(item)
+                    true
                 }
                 binding.btnPinItem.setOnClickListener {
                     ThemeManager.performSoftTick(it)

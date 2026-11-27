@@ -10,6 +10,7 @@ import android.view.animation.DecelerateInterpolator
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.lumetime.app.core.TimeCalculator
 import com.lumetime.app.data.CountdownFilter
@@ -21,10 +22,13 @@ import com.lumetime.app.model.CountdownItem
 import com.lumetime.app.ui.CountdownAdapter
 import com.lumetime.app.ui.CountdownEditorDialog
 import com.lumetime.app.ui.FilterChipAdapter
+import com.lumetime.app.ui.FocusAnimations
+import com.lumetime.app.ui.ShareCardGenerator
 import com.lumetime.app.ui.ThemeManager
 import com.lumetime.app.ui.ThemePickerDialog
 import com.lumetime.app.ui.YearDisplayFormatter
 import com.lumetime.app.ui.YearPulseMetricMode
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -101,6 +105,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        reloadCountdowns(animateHeroRoll = false, forceReloadFromDisk = true)
         binding.ambientGlowView.startBreathing()
         binding.yearDotMatrix.startPulse()
         mainHandler.removeCallbacks(tickRunnable)
@@ -171,7 +176,8 @@ class MainActivity : AppCompatActivity() {
         binding.rvFilterChips.adapter = filterChipAdapter
 
         countdownAdapter = CountdownAdapter(
-            onCardClick = { item -> openEditor(item) },
+            onCardClick = { item -> startActivity(FocusClockActivity.createIntent(this, item.id)) },
+            onCardLongClick = { item -> openEditor(item) },
             onPinClick = { item ->
                 allItems = store.togglePin(item.id)
                 reloadCountdowns(animateHeroRoll = false)
@@ -184,6 +190,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupInteractions() {
+        FocusAnimations.attachGlassPress(binding.btnThemePicker, 0.95f)
+        FocusAnimations.attachGlassPress(binding.cardYearPulse, 0.985f)
+        FocusAnimations.attachGlassPress(binding.cardHeroCountdown, 0.985f)
+        FocusAnimations.attachGlassPress(binding.fabAddCountdown, 0.94f)
+
         binding.btnThemePicker.setOnClickListener { view ->
             ThemeManager.performTapHaptic(view)
             ThemePickerDialog.show(this) { _, _ ->
@@ -198,7 +209,29 @@ class MainActivity : AppCompatActivity() {
             updateYearPulse(System.currentTimeMillis())
         }
 
+        binding.btnShareYearPulse.setOnClickListener { view ->
+            ThemeManager.performTapHaptic(view)
+            val palette = ThemeManager.getPalette(this)
+            lifecycleScope.launch {
+                val uri = ShareCardGenerator.generateYearPosterUri(this@MainActivity, palette)
+                ShareCardGenerator.launchShareChooser(this@MainActivity, uri, getString(R.string.app_name))
+            }
+        }
+
         binding.cardHeroCountdown.setOnClickListener { view ->
+            val currentHero = heroItem ?: return@setOnClickListener
+            ThemeManager.performTapHaptic(view)
+            startActivity(FocusClockActivity.createIntent(this, currentHero.id))
+        }
+
+        binding.cardHeroCountdown.setOnLongClickListener { view ->
+            val currentHero = heroItem ?: return@setOnLongClickListener false
+            ThemeManager.performTapHaptic(view)
+            openEditor(currentHero)
+            true
+        }
+
+        binding.btnEditHero.setOnClickListener { view ->
             val currentHero = heroItem ?: return@setOnClickListener
             ThemeManager.performTapHaptic(view)
             openEditor(currentHero)
@@ -261,9 +294,12 @@ class MainActivity : AppCompatActivity() {
         mainHandler.postDelayed(hideUndoRunnable, 4_500L)
     }
 
-    private fun reloadCountdowns(animateHeroRoll: Boolean) {
+    private fun reloadCountdowns(
+        animateHeroRoll: Boolean,
+        forceReloadFromDisk: Boolean = false
+    ) {
         val now = System.currentTimeMillis()
-        allItems = store.loadAll(now)
+        allItems = store.loadAll(now, forceReload = forceReloadFromDisk)
         heroItem = CountdownStore.selectHeroItem(allItems, now)
         updateHeroCountdown(now, animateRoll = animateHeroRoll)
         refreshListOnly(now)
@@ -320,6 +356,8 @@ class MainActivity : AppCompatActivity() {
         binding.tvYearPulseTitle.setTextColor(palette.accent)
         binding.tvDayOfYearBadge.background = ThemeManager.tagDrawable(this, palette)
         binding.tvDayOfYearBadge.setTextColor(palette.accent)
+        binding.btnShareYearPulse.background = ThemeManager.pillDrawable(this, palette)
+        binding.btnShareYearPulse.setColorFilter(palette.accent)
         binding.tvYearPrimaryValue.setTextColor(palette.textPrimary)
         binding.tvYearPrimaryUnit.setTextColor(palette.textSecondary)
         binding.tvYearSecondaryCaption.setTextColor(palette.textSecondary)
@@ -332,6 +370,8 @@ class MainActivity : AppCompatActivity() {
         binding.tvHeroBadge.setTextColor(palette.accent)
         binding.tvHeroHoursBadge.background = ThemeManager.tagDrawable(this, palette)
         binding.tvHeroHoursBadge.setTextColor(palette.accent)
+        binding.btnEditHero.background = ThemeManager.pillDrawable(this, palette)
+        binding.btnEditHero.setColorFilter(palette.textSecondary)
         binding.tvHeroTitle.setTextColor(palette.textPrimary)
         binding.tvHeroMeta.setTextColor(palette.textSecondary)
 

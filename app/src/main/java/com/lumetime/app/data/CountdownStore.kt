@@ -43,8 +43,13 @@ class CountdownStore(
     private var cachedItems: MutableList<CountdownItem>? = null
 
     @Synchronized
-    fun loadAll(nowMillis: Long = System.currentTimeMillis()): List<CountdownItem> {
-        cachedItems?.let { return it.toList() }
+    fun loadAll(
+        nowMillis: Long = System.currentTimeMillis(),
+        forceReload: Boolean = false
+    ): List<CountdownItem> {
+        if (!forceReload) {
+            cachedItems?.let { return it.toList() }
+        }
 
         val loaded = if (storageFile.exists()) {
             runCatching {
