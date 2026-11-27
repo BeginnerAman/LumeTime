@@ -72,4 +72,8 @@
     <string name="personalize_desc">Personalize</string>
     <string name="your_name_hint">Your name (e.g. Aman)</string>
     <string name="daily_intention_hint">Daily intention (e.g. Deep prep for finals)</string>
+    <string name="world_clock_title">World Clock &amp; Zones</string>
+    <string name="quick_world_clock_label">World Clock</string>
+    <string name="prep_checklist_label">Prep Checklist</string>
+    <string name="add_step_hint">Add step (e.g. Revise Notes)</string>
 </resources>

@@ -112,6 +112,60 @@
             android:singleLine="true"
             android:textSize="13sp" />
 
+        <!-- Prep Checklist Section -->
+        <TextView
+            android:id="@+id/tvChecklistSectionLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.05"
+            android:text="@string/prep_checklist_label"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/etAddStep"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:hint="@string/add_step_hint"
+                android:imeOptions="actionDone"
+                android:inputType="textCapSentences"
+                android:maxLength="56"
+                android:paddingHorizontal="12dp"
+                android:singleLine="true"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/btnAddStep"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center"
+                android:paddingHorizontal="14dp"
+                android:text="+ Add"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/checklistStepsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="vertical" />
+
         <!-- Mode Switcher -->
         <LinearLayout
             android:id="@+id/modeSwitchContainer"

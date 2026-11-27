@@ -1,5 +1,6 @@
 package com.lumetime.app.data
 
+import com.lumetime.app.model.ChecklistStep
 import com.lumetime.app.model.CountdownCategory
 import com.lumetime.app.model.CountdownIcon
 import com.lumetime.app.model.CountdownItem
@@ -32,6 +33,17 @@ object CountdownJsonCodec {
                 put("note", item.note)
                 put("checkInCount", item.checkInCount)
                 put("lastCheckInDayKey", item.lastCheckInDayKey)
+                val checklistJson = JSONArray()
+                item.checklist.forEach { step ->
+                    checklistJson.put(
+                        JSONObject().apply {
+                            put("id", step.id)
+                            put("text", step.text)
+                            put("done", step.done)
+                        }
+                    )
+                }
+                put("checklist", checklistJson)
             }
             array.put(obj)
         }
@@ -53,6 +65,25 @@ object CountdownJsonCodec {
             val mode = enumOrDefault(obj.optString("mode"), CountdownMode.COUNTDOWN)
             val repeatRule = enumOrDefault(obj.optString("repeatRule"), RepeatRule.NONE)
 
+            val checklistArray = obj.optJSONArray("checklist")
+            val checklist = ArrayList<ChecklistStep>()
+            if (checklistArray != null) {
+                for (j in 0 until checklistArray.length()) {
+                    val stepObj = checklistArray.optJSONObject(j) ?: continue
+                    val stepId = stepObj.optString("id", "").trim()
+                    val stepText = stepObj.optString("text", "").trim()
+                    if (stepId.isNotEmpty() && stepText.isNotEmpty()) {
+                        checklist.add(
+                            ChecklistStep(
+                                id = stepId,
+                                text = stepText,
+                                done = stepObj.optBoolean("done", false)
+                            )
+                        )
+                    }
+                }
+            }
+
             result.add(
                 CountdownItem(
                     id = id,
@@ -72,7 +103,8 @@ object CountdownJsonCodec {
                     reminderEnabled = obj.optBoolean("reminderEnabled", false),
                     note = obj.optString("note", "").trim(),
                     checkInCount = obj.optInt("checkInCount", 0).coerceAtLeast(0),
-                    lastCheckInDayKey = obj.optString("lastCheckInDayKey", "").trim()
+                    lastCheckInDayKey = obj.optString("lastCheckInDayKey", "").trim(),
+                    checklist = checklist
                 )
             )
         }

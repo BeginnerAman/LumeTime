@@ -31,6 +31,15 @@ enum class CountdownCategory(val label: String) {
 }
 
 /**
+ * Sub-task / preparation item attached to a countdown or milestone.
+ */
+data class ChecklistStep(
+    val id: String,
+    val text: String,
+    val done: Boolean = false
+)
+
+/**
  * Persistent user countdown or milestone entry.
  * Note: [emoji] stores the [CountdownIcon.id] (or legacy emoji string, auto-migrated via [resolveIcon]).
  */
@@ -49,7 +58,8 @@ data class CountdownItem(
     val reminderEnabled: Boolean = false,
     val note: String = "",
     val checkInCount: Int = 0,
-    val lastCheckInDayKey: String = ""
+    val lastCheckInDayKey: String = "",
+    val checklist: List<ChecklistStep> = emptyList()
 ) {
     fun resolveIcon(): CountdownIcon = CountdownIcon.fromStored(emoji, category)
 }

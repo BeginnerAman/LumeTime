@@ -20,6 +20,7 @@ import com.lumetime.app.R
 import com.lumetime.app.core.PrecisionClockTicker
 import com.lumetime.app.core.TimeCalculator
 import com.lumetime.app.databinding.DialogCountdownEditorBinding
+import com.lumetime.app.model.ChecklistStep
 import com.lumetime.app.model.CountdownCategory
 import com.lumetime.app.model.CountdownIcon
 import com.lumetime.app.model.CountdownItem
@@ -100,6 +101,7 @@ object CountdownEditorDialog {
         var accentHex = existing?.accentHex ?: accentHexChoices.first()
         var isPinned = existing?.isPinned ?: false
         var reminderEnabled = existing?.reminderEnabled ?: false
+        val checklistSteps = existing?.checklist?.toMutableList() ?: mutableListOf()
 
         binding.tvEditorTitle.text = context.getString(
             if (existing == null) R.string.add_countdown else R.string.edit_countdown
@@ -138,6 +140,56 @@ object CountdownEditorDialog {
             binding.etNote.background = ThemeManager.pillDrawable(context, palette)
             binding.etNote.setTextColor(palette.textPrimary)
             binding.etNote.setHintTextColor(palette.textTertiary)
+
+            binding.tvChecklistSectionLabel.setTextColor(palette.textSecondary)
+            binding.etAddStep.background = ThemeManager.pillDrawable(context, palette)
+            binding.etAddStep.setTextColor(palette.textPrimary)
+            binding.etAddStep.setHintTextColor(palette.textTertiary)
+            binding.btnAddStep.background = ThemeManager.pillDrawable(context, palette)
+            binding.btnAddStep.setTextColor(palette.accent)
+
+            binding.checklistStepsContainer.removeAllViews()
+            checklistSteps.forEachIndexed { idx, step ->
+                val row = LinearLayout(context).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    setPadding(
+                        ThemeManager.dp(context, 12f).toInt(),
+                        ThemeManager.dp(context, 7f).toInt(),
+                        ThemeManager.dp(context, 10f).toInt(),
+                        ThemeManager.dp(context, 7f).toInt()
+                    )
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply { bottomMargin = ThemeManager.dp(context, 5f).toInt() }
+                    background = ThemeManager.pillDrawable(context, palette)
+                }
+                val tvText = TextView(context).apply {
+                    text = if (step.done) "✓ ${step.text}" else "• ${step.text}"
+                    textSize = 12f
+                    setTextColor(if (step.done) palette.accent else palette.textPrimary)
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                    setOnClickListener {
+                        ThemeManager.performSoftTick(it)
+                        checklistSteps[idx] = step.copy(done = !step.done)
+                        renderEditor()
+                    }
+                }
+                val btnRemove = TextView(context).apply {
+                    text = "Remove"
+                    textSize = 11f
+                    setTextColor(palette.urgentCoral)
+                    setOnClickListener {
+                        ThemeManager.performSoftTick(it)
+                        checklistSteps.removeAt(idx)
+                        renderEditor()
+                    }
+                }
+                row.addView(tvText)
+                row.addView(btnRemove)
+                binding.checklistStepsContainer.addView(row)
+            }
 
             binding.modeSwitchContainer.background = ThemeManager.pillDrawable(context, palette)
             val modeBtns = listOf(
@@ -389,6 +441,15 @@ object CountdownEditorDialog {
             dialog.dismiss()
         }
 
+        binding.btnAddStep.setOnClickListener {
+            val text = binding.etAddStep.text?.toString()?.trim().orEmpty()
+            if (text.isEmpty()) return@setOnClickListener
+            ThemeManager.performSoftTick(it)
+            checklistSteps.add(ChecklistStep(id = UUID.randomUUID().toString(), text = text))
+            binding.etAddStep.setText("")
+            renderEditor()
+        }
+
         binding.btnSaveCountdown.setOnClickListener {
             val rawTitle = binding.etTitle.text?.toString()?.trim().orEmpty()
             if (rawTitle.isEmpty()) {
@@ -420,7 +481,8 @@ object CountdownEditorDialog {
                 checkInCount = if (mode == CountdownMode.COUNT_UP) existing?.checkInCount ?: 0 else 0,
                 lastCheckInDayKey = if (mode == CountdownMode.COUNT_UP) {
                     existing?.lastCheckInDayKey.orEmpty()
-                } else ""
+                } else "",
+                checklist = checklistSteps.toList()
             )
             onSave(item)
             dialog.dismiss()

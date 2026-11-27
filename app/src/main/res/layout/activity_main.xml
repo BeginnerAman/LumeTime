@@ -157,17 +157,18 @@
                     android:id="@+id/btnDateCalcTool"
                     android:layout_width="0dp"
                     android:layout_height="38dp"
+                    android:layout_marginEnd="8dp"
                     android:layout_weight="1"
                     android:clickable="true"
                     android:focusable="true"
                     android:gravity="center"
                     android:orientation="horizontal"
-                    android:paddingHorizontal="12dp">
+                    android:paddingHorizontal="10dp">
 
                     <ImageView
                         android:id="@+id/ivDateCalcToolIcon"
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
                         android:contentDescription="@null"
                         android:src="@drawable/ic_calendar" />
 
@@ -175,12 +176,43 @@
                         android:id="@+id/tvDateCalcToolLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="7dp"
+                        android:layout_marginStart="6dp"
                         android:ellipsize="end"
                         android:fontFamily="sans-serif-medium"
                         android:maxLines="1"
                         android:text="@string/quick_date_calc_label"
-                        android:textSize="12sp"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/btnWorldClockTool"
+                    android:layout_width="0dp"
+                    android:layout_height="38dp"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="10dp">
+
+                    <ImageView
+                        android:id="@+id/ivWorldClockToolIcon"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_icon_plane" />
+
+                    <TextView
+                        android:id="@+id/tvWorldClockToolLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:ellipsize="end"
+                        android:fontFamily="sans-serif-medium"
+                        android:maxLines="1"
+                        android:text="@string/quick_world_clock_label"
+                        android:textSize="11sp"
                         android:textStyle="bold" />
                 </LinearLayout>
             </LinearLayout>

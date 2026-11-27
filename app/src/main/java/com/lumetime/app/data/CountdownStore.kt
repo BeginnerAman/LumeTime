@@ -160,6 +160,22 @@ class CountdownStore(
      * Restarts a Count-Up streak / milestone from [nowMillis], clearing its check-in counter.
      */
     @Synchronized
+    fun toggleChecklistStep(countdownId: String, stepId: String): List<CountdownItem> {
+        val list = ensureLoadedLocked()
+        val idx = list.indexOfFirst { it.id == countdownId }
+        if (idx < 0) return list.toList()
+        val current = list[idx]
+        val updatedSteps = current.checklist.map { step ->
+            if (step.id == stepId) step.copy(done = !step.done) else step
+        }
+        val updated = list.toMutableList()
+        updated[idx] = current.copy(checklist = updatedSteps)
+        cachedItems = updated
+        persistLocked(updated)
+        return updated.toList()
+    }
+
+    @Synchronized
     fun resetMilestone(
         id: String,
         nowMillis: Long = System.currentTimeMillis()

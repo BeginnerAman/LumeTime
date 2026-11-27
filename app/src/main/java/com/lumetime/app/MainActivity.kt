@@ -48,6 +48,7 @@ import com.lumetime.app.ui.ShareCardGenerator
 import com.lumetime.app.ui.ThemeManager
 import com.lumetime.app.ui.ThemePickerDialog
 import com.lumetime.app.ui.WidgetStudioDialog
+import com.lumetime.app.ui.WorldClockDialog
 import com.lumetime.app.ui.YearDisplayFormatter
 import com.lumetime.app.ui.YearPulseMetricMode
 import com.lumetime.app.widget.WidgetScheduler
@@ -305,6 +306,7 @@ class MainActivity : AppCompatActivity() {
         FocusAnimations.attachGlassPress(binding.btnThemePicker, 0.92f)
         FocusAnimations.attachGlassPress(binding.btnFocusTimerTool, 0.96f)
         FocusAnimations.attachGlassPress(binding.btnDateCalcTool, 0.96f)
+        FocusAnimations.attachGlassPress(binding.btnWorldClockTool, 0.96f)
         FocusAnimations.attachGlassPress(binding.cardYearPulse, 0.985f)
         FocusAnimations.attachGlassPress(binding.cardHeroCountdown, 0.985f)
         FocusAnimations.attachGlassPress(binding.fabAddCountdown, 0.94f)
@@ -464,6 +466,11 @@ class MainActivity : AppCompatActivity() {
             DateCalculatorDialog.show(this, ThemeManager.getPalette(this)) { targetMillis, suggestedTitle ->
                 openEditor(null, prefillTargetMillis = targetMillis, prefillTitle = suggestedTitle)
             }
+        }
+
+        binding.btnWorldClockTool.setOnClickListener { view ->
+            ThemeManager.performTapHaptic(view)
+            WorldClockDialog.show(this, ThemeManager.getPalette(this))
         }
 
         binding.cardYearPulse.setOnClickListener { view ->
@@ -733,6 +740,10 @@ class MainActivity : AppCompatActivity() {
         binding.btnDateCalcTool.background = ThemeManager.pillDrawable(this, palette)
         binding.ivDateCalcToolIcon.setColorFilter(palette.accent)
         binding.tvDateCalcToolLabel.setTextColor(palette.textPrimary)
+
+        binding.btnWorldClockTool.background = ThemeManager.pillDrawable(this, palette)
+        binding.ivWorldClockToolIcon.setColorFilter(palette.accent)
+        binding.tvWorldClockToolLabel.setTextColor(palette.textPrimary)
         updateQuickToolsBar(System.currentTimeMillis())
 
         binding.searchPill.background = ThemeManager.pillDrawable(this, palette)

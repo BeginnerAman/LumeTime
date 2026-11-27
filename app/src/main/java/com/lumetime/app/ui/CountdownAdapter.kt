@@ -154,6 +154,23 @@ class CountdownAdapter(
                 } else {
                     binding.btnCheckIn.visibility = View.GONE
                 }
+
+                if (item.checklist.isNotEmpty()) {
+                    val doneCount = item.checklist.count { it.done }
+                    val totalCount = item.checklist.size
+                    val allDone = doneCount == totalCount
+                    val chipColor = if (allDone) itemAccent else pal.textSecondary
+                    binding.tvChecklistBadge.visibility = View.VISIBLE
+                    binding.tvChecklistBadge.text = "$doneCount/$totalCount steps"
+                    binding.tvChecklistBadge.background = if (allDone) {
+                        ThemeManager.tintedTagDrawable(context, pal, itemAccent)
+                    } else {
+                        ThemeManager.tagDrawable(context, pal)
+                    }
+                    binding.tvChecklistBadge.setTextColor(chipColor)
+                } else {
+                    binding.tvChecklistBadge.visibility = View.GONE
+                }
             }
 
             // Optional urgency badge without overriding user's chosen accent color

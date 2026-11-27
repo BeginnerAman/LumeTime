@@ -311,6 +311,38 @@
                     android:paddingVertical="6dp"
                     android:textSize="13sp"
                     android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/focusChecklistSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/tvFocusChecklistHeader"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:letterSpacing="0.06"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+
+                    <ScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:maxHeight="96dp"
+                        android:scrollbars="none">
+
+                        <LinearLayout
+                            android:id="@+id/focusChecklistRows"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical" />
+                    </ScrollView>
+                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

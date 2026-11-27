@@ -53,6 +53,7 @@ class FocusClockActivity : AppCompatActivity() {
     private var currentItem: CountdownItem? = null
     private var keepAwake: Boolean = false
     private var firstRender: Boolean = true
+    private var lastChecklistRenderKey: String = ""
 
     private var basePadLeft = 0
     private var basePadTop = 0
@@ -350,6 +351,65 @@ class FocusClockActivity : AppCompatActivity() {
 
         val prefix = if (breakdown.isCountUp) "Started " else "Target • "
         binding.tvFocusTargetDate.text = prefix + dateFormat.format(Date(breakdown.effectiveTargetMillis))
+        renderChecklist(item, palette, displayAccent)
+    }
+
+    private fun renderChecklist(
+        item: CountdownItem,
+        palette: ThemeManager.ThemePalette,
+        itemAccent: Int
+    ) {
+        if (item.checklist.isEmpty()) {
+            lastChecklistRenderKey = ""
+            binding.focusChecklistSection.visibility = android.view.View.GONE
+            return
+        }
+        val key = "${item.id}:$itemAccent:${item.checklist.hashCode()}"
+        if (key == lastChecklistRenderKey) return
+        lastChecklistRenderKey = key
+
+        binding.focusChecklistSection.visibility = android.view.View.VISIBLE
+        val doneCount = item.checklist.count { it.done }
+        binding.tvFocusChecklistHeader.text = String.format(
+            Locale.US,
+            "PREP CHECKLIST • %d/%d",
+            doneCount,
+            item.checklist.size
+        )
+        binding.tvFocusChecklistHeader.setTextColor(itemAccent)
+        binding.focusChecklistRows.removeAllViews()
+
+        val padH = ThemeManager.dp(this, 12f).toInt()
+        val padV = ThemeManager.dp(this, 8f).toInt()
+        val gap = ThemeManager.dp(this, 6f).toInt()
+
+        item.checklist.forEach { step ->
+            val row = android.widget.TextView(this).apply {
+                text = if (step.done) "✓  ${step.text}" else "○  ${step.text}"
+                textSize = 13f
+                setPadding(padH, padV, padH, padV)
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { bottomMargin = gap }
+                background = if (step.done) {
+                    ThemeManager.tintedTagDrawable(this@FocusClockActivity, palette, itemAccent)
+                } else {
+                    ThemeManager.pillDrawable(this@FocusClockActivity, palette)
+                }
+                setTextColor(if (step.done) itemAccent else palette.textPrimary)
+                if (step.done) {
+                    paintFlags = paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
+                }
+                setOnClickListener { view ->
+                    ThemeManager.performSoftTick(view)
+                    val updatedList = store.toggleChecklistStep(item.id, step.id)
+                    currentItem = updatedList.firstOrNull { it.id == item.id } ?: item
+                    currentItem?.let { renderChecklist(it, palette, itemAccent) }
+                }
+            }
+            binding.focusChecklistRows.addView(row)
+        }
     }
 
     companion object {
