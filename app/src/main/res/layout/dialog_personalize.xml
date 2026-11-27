@@ -241,6 +241,20 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
+        <!-- Test Alert Preview -->
+        <TextView
+            android:id="@+id/btnTestAlert"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:layout_marginTop="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:text="Test Timer Sound &amp; Vibration"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
         <!-- Backup & Restore Entry -->
         <TextView
             android:id="@+id/btnOpenBackupSheet"

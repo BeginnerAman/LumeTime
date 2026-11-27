@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
+import com.lumetime.app.core.TimerAlertManager
 import com.lumetime.app.data.PersonalProfilePrefs
 import com.lumetime.app.databinding.DialogPersonalizeBinding
 import java.util.Locale
@@ -146,6 +147,9 @@ object PersonalizeDialog {
             binding.btnVibrationToggle.text =
                 if (profile.vibrationAlertEnabled) "Vibration: ON" else "Vibrate: OFF"
 
+            binding.btnTestAlert.background = ThemeManager.pillDrawable(context, palette)
+            binding.btnTestAlert.setTextColor(palette.textSecondary)
+
             binding.btnOpenBackupSheet.background = ThemeManager.pillDrawable(context, palette)
             binding.btnOpenBackupSheet.setTextColor(palette.accent)
             binding.btnSavePersonalize.background = ThemeManager.fabDrawable(context, palette)
@@ -182,6 +186,13 @@ object PersonalizeDialog {
             ThemeManager.performSoftTick(it)
             profile = profile.copy(vibrationAlertEnabled = !profile.vibrationAlertEnabled)
             render()
+        }
+        binding.btnTestAlert.setOnClickListener {
+            TimerAlertManager.playAlertWithOptions(
+                context,
+                soundEnabled = profile.soundAlertEnabled,
+                vibrationEnabled = profile.vibrationAlertEnabled
+            )
         }
         binding.btnOpenBackupSheet.setOnClickListener {
             ThemeManager.performTapHaptic(it)

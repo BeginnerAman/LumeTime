@@ -1,12 +1,15 @@
 package com.lumetime.app.ui
 
+import android.app.AlertDialog
 import android.content.Context
 import android.graphics.Color
 import android.os.Handler
 import android.os.Looper
+import android.text.InputType
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.lumetime.app.core.FocusTimerEngine
@@ -132,6 +135,54 @@ object FocusTimerDialog {
                 }
                 binding.timerPresetsContainer.addView(chip)
             }
+
+            val isCustomPreset = presets.none { it.durationMillis == snapshot.timerDurationMillis }
+            val customMins = ((snapshot.timerDurationMillis + 30_000L) / 60_000L).toInt().coerceAtLeast(1)
+            val customChip = TextView(context).apply {
+                text = if (isCustomPreset) "Custom (${customMins}m)" else "Custom..."
+                textSize = 12f
+                gravity = Gravity.CENTER
+                setPadding(padH, 0, padH, 0)
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    height
+                )
+                background = if (isCustomPreset) {
+                    ThemeManager.activeChipDrawable(context, palette)
+                } else {
+                    ThemeManager.pillDrawable(context, palette)
+                }
+                setTextColor(if (isCustomPreset) Color.WHITE else palette.accent)
+                setOnClickListener {
+                    ThemeManager.performSoftTick(it)
+                    val input = EditText(context).apply {
+                        inputType = InputType.TYPE_CLASS_NUMBER
+                        hint = "Minutes (1–180)"
+                        setText(customMins.toString())
+                        setSelection(text.length)
+                    }
+                    AlertDialog.Builder(context)
+                        .setTitle("Custom Focus Duration")
+                        .setMessage("Enter minutes (1 to 180):")
+                        .setView(input)
+                        .setPositiveButton("Set") { _, _ ->
+                            val mins = input.text?.toString()?.trim()?.toIntOrNull()?.coerceIn(1, 180)
+                            if (mins != null) {
+                                completionCelebrated = false
+                                snapshot = FocusTimerEngine.selectPreset(
+                                    snapshot,
+                                    mins.toLong() * 60_000L
+                                )
+                                saveAndNotify()
+                                renderPresets()
+                                renderDynamicTick()
+                            }
+                        }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                }
+            }
+            binding.timerPresetsContainer.addView(customChip)
         }
 
         fun renderLaps() {
@@ -364,6 +415,7 @@ object FocusTimerDialog {
         binding.btnTimerReset.setOnClickListener {
             ThemeManager.performSoftTick(it)
             completionCelebrated = false
+            TimerAlertManager.cancelFocusNotification(context)
             snapshot = FocusTimerEngine.resetTimer(snapshot)
             saveAndNotify()
             renderDynamicTick()

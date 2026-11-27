@@ -36,6 +36,7 @@ object TimerAlertManager {
 
     fun syncFocusAlarm(context: Context, snapshot: FocusTimerSnapshot) {
         if (snapshot.isTimerRunning && snapshot.timerTargetEndMillis > System.currentTimeMillis()) {
+            cancelFocusNotification(context)
             val mins = ((snapshot.timerDurationMillis + 30_000L) / 60_000L).toInt().coerceAtLeast(1)
             scheduleFocusTimerAlarm(
                 context = context,
@@ -46,6 +47,10 @@ object TimerAlertManager {
         } else {
             cancelFocusTimerAlarm(context)
         }
+    }
+
+    fun cancelFocusNotification(context: Context) {
+        NotificationManagerCompat.from(context).cancel(FOCUS_NOTIFICATION_ID)
     }
 
     fun scheduleFocusTimerAlarm(
@@ -89,10 +94,14 @@ object TimerAlertManager {
 
     fun playCompletionChimeAndVibrate(context: Context) {
         val profile = PersonalProfilePrefs.load(context)
-        if (profile.vibrationAlertEnabled) {
+        playAlertWithOptions(context, profile.soundAlertEnabled, profile.vibrationAlertEnabled)
+    }
+
+    fun playAlertWithOptions(context: Context, soundEnabled: Boolean, vibrationEnabled: Boolean) {
+        if (vibrationEnabled) {
             vibrateCompletionPattern(context)
         }
-        if (profile.soundAlertEnabled) {
+        if (soundEnabled) {
             playGentleChime(context)
         }
     }

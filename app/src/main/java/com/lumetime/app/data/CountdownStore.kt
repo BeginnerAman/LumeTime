@@ -3,6 +3,7 @@ package com.lumetime.app.data
 import android.content.Context
 import com.lumetime.app.core.PrecisionClockTicker
 import com.lumetime.app.core.TimeCalculator
+import com.lumetime.app.model.ChecklistStep
 import com.lumetime.app.model.CountdownCategory
 import com.lumetime.app.model.CountdownIcon
 import com.lumetime.app.model.CountdownItem
@@ -369,7 +370,13 @@ class CountdownStore(
                     category = CountdownCategory.GOAL,
                     accentHex = "#A78BFA",
                     isPinned = false,
-                    emoji = CountdownIcon.TARGET.id
+                    emoji = CountdownIcon.TARGET.id,
+                    note = "Tap card to check off prep steps",
+                    checklist = listOf(
+                        ChecklistStep(UUID.randomUUID().toString(), "Set daily Focus goal", done = true),
+                        ChecklistStep(UUID.randomUUID().toString(), "Run first 25m Pomodoro", done = false),
+                        ChecklistStep(UUID.randomUUID().toString(), "Review weekly streak", done = false)
+                    )
                 ),
                 CountdownItem(
                     id = UUID.randomUUID().toString(),
@@ -382,7 +389,8 @@ class CountdownStore(
                     category = CountdownCategory.MILESTONE,
                     accentHex = "#34D399",
                     isPinned = false,
-                    emoji = CountdownIcon.FLAME.id
+                    emoji = CountdownIcon.FLAME.id,
+                    note = "Tap Check In Today to log consistency"
                 )
             )
         }

@@ -422,6 +422,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             FocusTimerStore.save(this, snap)
+            TimerAlertManager.cancelFocusNotification(this)
             TimerAlertManager.syncFocusAlarm(this, snap)
             updateQuickToolsBar(now)
         }
@@ -443,6 +444,7 @@ class MainActivity : AppCompatActivity() {
                 FocusTimerEngine.recordLap(snap, now)
             }
             FocusTimerStore.save(this, snap)
+            TimerAlertManager.cancelFocusNotification(this)
             TimerAlertManager.syncFocusAlarm(this, snap)
             updateQuickToolsBar(now)
         }
@@ -457,6 +459,7 @@ class MainActivity : AppCompatActivity() {
                 FocusTimerEngine.resetTimer(snap)
             }
             FocusTimerStore.save(this, snap)
+            TimerAlertManager.cancelFocusNotification(this)
             TimerAlertManager.cancelFocusTimerAlarm(this)
             updateQuickToolsBar(now)
         }
@@ -1069,10 +1072,16 @@ class MainActivity : AppCompatActivity() {
             else -> String.format(Locale.US, "%,d hrs left", breakdown.totalHours)
         }
 
+        val stepsSummary = if (item.checklist.isNotEmpty()) {
+            val done = item.checklist.count { it.done }
+            " • $done/${item.checklist.size} steps"
+        } else ""
+        val noteSummary = if (item.note.isNotBlank()) " • ${item.note}" else ""
+
         if (breakdown.isCountUp) {
             binding.heroProgressBar.visibility = View.GONE
             binding.tvHeroMeta.text =
-                "Started ${heroMetaDateFormat.format(Date(breakdown.effectiveTargetMillis))}"
+                "Started ${heroMetaDateFormat.format(Date(breakdown.effectiveTargetMillis))}$stepsSummary$noteSummary"
         } else {
             binding.heroProgressBar.visibility = View.VISIBLE
             binding.heroProgressBar.setColors(
@@ -1084,9 +1093,11 @@ class MainActivity : AppCompatActivity() {
             val pct = (breakdown.progress * 100f)
             binding.tvHeroMeta.text = String.format(
                 Locale.US,
-                "%s • %.0f%% elapsed",
+                "%s • %.0f%% elapsed%s%s",
                 heroMetaDateFormat.format(Date(breakdown.effectiveTargetMillis)),
-                pct
+                pct,
+                stepsSummary,
+                noteSummary
             )
         }
     }
