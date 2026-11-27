@@ -26,8 +26,10 @@ import com.lumetime.app.ui.FocusAnimations
 import com.lumetime.app.ui.ShareCardGenerator
 import com.lumetime.app.ui.ThemeManager
 import com.lumetime.app.ui.ThemePickerDialog
+import com.lumetime.app.ui.WidgetStudioDialog
 import com.lumetime.app.ui.YearDisplayFormatter
 import com.lumetime.app.ui.YearPulseMetricMode
+import com.lumetime.app.widget.WidgetScheduler
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -181,6 +183,7 @@ class MainActivity : AppCompatActivity() {
             onPinClick = { item ->
                 allItems = store.togglePin(item.id)
                 reloadCountdowns(animateHeroRoll = false)
+                WidgetScheduler.refreshAllWidgets(this)
             }
         )
         countdownAdapter.setShowTotalHours(showTotalHoursMode)
@@ -190,10 +193,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupInteractions() {
+        FocusAnimations.attachGlassPress(binding.btnWidgetsStudio, 0.95f)
         FocusAnimations.attachGlassPress(binding.btnThemePicker, 0.95f)
         FocusAnimations.attachGlassPress(binding.cardYearPulse, 0.985f)
         FocusAnimations.attachGlassPress(binding.cardHeroCountdown, 0.985f)
         FocusAnimations.attachGlassPress(binding.fabAddCountdown, 0.94f)
+
+        binding.btnWidgetsStudio.setOnClickListener { view ->
+            ThemeManager.performTapHaptic(view)
+            WidgetStudioDialog.show(this, ThemeManager.getPalette(this))
+        }
 
         binding.btnThemePicker.setOnClickListener { view ->
             ThemeManager.performTapHaptic(view)
@@ -264,6 +273,7 @@ class MainActivity : AppCompatActivity() {
             recentlyDeletedItem = null
             allItems = store.upsert(restore)
             reloadCountdowns(animateHeroRoll = false)
+            WidgetScheduler.refreshAllWidgets(this)
         }
     }
 
@@ -276,6 +286,7 @@ class MainActivity : AppCompatActivity() {
             onSave = { saved ->
                 allItems = store.upsert(saved)
                 reloadCountdowns(animateHeroRoll = false)
+                WidgetScheduler.refreshAllWidgets(this)
             },
             onDelete = { deleted ->
                 store.delete(deleted.id)
@@ -283,6 +294,7 @@ class MainActivity : AppCompatActivity() {
                 recentlyDeletedItem = deleted
                 showUndoBanner(deleted.title)
                 reloadCountdowns(animateHeroRoll = false)
+                WidgetScheduler.refreshAllWidgets(this)
             }
         )
     }
@@ -346,6 +358,10 @@ class MainActivity : AppCompatActivity() {
 
         binding.tvBrandTitle.setTextColor(palette.textPrimary)
         binding.tvTodayDate.setTextColor(palette.textSecondary)
+
+        binding.btnWidgetsStudio.background = ThemeManager.pillDrawable(this, palette)
+        binding.ivWidgetsIcon.setColorFilter(palette.accent)
+        binding.tvWidgetsButtonLabel.setTextColor(palette.textPrimary)
 
         binding.btnThemePicker.background = ThemeManager.pillDrawable(this, palette)
         binding.ivPaletteIcon.setColorFilter(palette.accent)

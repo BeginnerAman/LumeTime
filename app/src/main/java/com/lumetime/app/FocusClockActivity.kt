@@ -21,6 +21,7 @@ import com.lumetime.app.ui.CountdownEditorDialog
 import com.lumetime.app.ui.FocusAnimations
 import com.lumetime.app.ui.ShareCardGenerator
 import com.lumetime.app.ui.ThemeManager
+import com.lumetime.app.widget.WidgetScheduler
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -170,9 +171,11 @@ class FocusClockActivity : AppCompatActivity() {
                     firstRender = true
                     applyTheme()
                     renderCountdown(System.currentTimeMillis(), animate = false)
+                    WidgetScheduler.refreshAllWidgets(this)
                 },
                 onDelete = { deleted ->
                     store.delete(deleted.id)
+                    WidgetScheduler.refreshAllWidgets(this)
                     finish()
                 }
             )
@@ -309,7 +312,7 @@ class FocusClockActivity : AppCompatActivity() {
     }
 
     companion object {
-        private const val EXTRA_COUNTDOWN_ID = "extra_countdown_id"
+        const val EXTRA_COUNTDOWN_ID = "extra_countdown_id"
         private const val KEY_KEEP_AWAKE = "key_keep_awake"
 
         fun createIntent(context: Context, countdownId: String): Intent {

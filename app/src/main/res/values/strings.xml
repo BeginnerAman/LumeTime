@@ -36,4 +36,11 @@
     <string name="back_desc">Back</string>
     <string name="share_chooser_title">Share LumeTime Card</string>
     <string name="tap_for_zen_hint">Tap for Zen Mode • Hold to edit</string>
+    <string name="widgets_label">Widgets</string>
+    <string name="widget_studio_title">Glass Widget Studio</string>
+    <string name="widget_studio_subtitle">Customize translucent style &amp; pin to Home Screen</string>
+    <string name="widget_year_desc">LumeTime Year Pulse (Days &amp; Hours Left)</string>
+    <string name="widget_hero_desc">LumeTime Hero Countdown (Days, Hours &amp; Live Timer)</string>
+    <string name="widget_list_desc">LumeTime Multi-Countdown Glass List</string>
+    <string name="widget_pin_fallback">Long-press your Home Screen → Widgets → LumeTime to add</string>
 </resources>

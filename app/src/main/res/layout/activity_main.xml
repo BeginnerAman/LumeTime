@@ -58,6 +58,35 @@
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/btnWidgetsStudio"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:layout_marginEnd="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp">
+
+                    <ImageView
+                        android:id="@+id/ivWidgetsIcon"
+                        android:layout_width="17dp"
+                        android:layout_height="17dp"
+                        android:contentDescription="@string/widgets_label"
+                        android:src="@drawable/ic_widgets" />
+
+                    <TextView
+                        android:id="@+id/tvWidgetsButtonLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="5dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="@string/widgets_label"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
                     android:id="@+id/btnThemePicker"
                     android:layout_width="wrap_content"
                     android:layout_height="40dp"
