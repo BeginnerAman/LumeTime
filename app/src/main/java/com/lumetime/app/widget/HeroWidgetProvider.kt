@@ -56,6 +56,7 @@ class HeroWidgetProvider : AppWidgetProvider() {
             val bgRes = WidgetPrefs.resolveBackgroundRes(style, opacity)
             val isDark = style == WidgetPrefs.WidgetGlassStyle.DARK
             val liveChrono = WidgetPrefs.isLiveChronometerEnabled(context)
+            val iconBadgeBg = if (isDark) R.drawable.bg_widget_icon_dark else R.drawable.bg_widget_icon_light
 
             val primaryText = if (isDark) 0xFFF8FAFC.toInt() else 0xFF0F172A.toInt()
             val secondaryText = if (isDark) 0xFFB8C4D9.toInt() else 0xFF475569.toInt()
@@ -64,6 +65,7 @@ class HeroWidgetProvider : AppWidgetProvider() {
             appWidgetIds.forEach { widgetId ->
                 val views = RemoteViews(context.packageName, R.layout.widget_hero_countdown)
                 views.setInt(R.id.widgetHeroRoot, "setBackgroundResource", bgRes)
+                views.setInt(R.id.widgetHeroIconBadge, "setBackgroundResource", iconBadgeBg)
 
                 if (hero == null) {
                     val mainPending = PendingIntent.getActivity(

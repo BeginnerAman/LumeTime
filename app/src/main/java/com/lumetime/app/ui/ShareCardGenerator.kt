@@ -12,6 +12,7 @@ import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
 import android.net.Uri
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.lumetime.app.R
 import com.lumetime.app.core.TimeCalculator
@@ -118,11 +119,14 @@ object ShareCardGenerator {
         val copy = buildCountdownCopy(item, breakdown, dateText)
         val accent = runCatching { Color.parseColor(item.accentHex) }.getOrDefault(palette.accent)
         val bitmap = renderPosterBitmap(
+            context = context,
             palette = palette,
             copy = copy,
             accent = accent,
             progress = if (breakdown.isCountUp) null else breakdown.progress,
-            yearProgress = null
+            yearProgress = null,
+            iconRes = item.resolveIcon().drawableRes,
+            note = item.note
         )
         writePosterPng(context, bitmap, "countdown_${item.id.take(8)}.png")
     }
@@ -135,11 +139,14 @@ object ShareCardGenerator {
         val yearProgress = TimeCalculator.computeYearProgress(nowMillis)
         val copy = buildYearCopy(yearProgress)
         val bitmap = renderPosterBitmap(
+            context = context,
             palette = palette,
             copy = copy,
             accent = palette.accent,
             progress = yearProgress.progressFraction,
-            yearProgress = yearProgress
+            yearProgress = yearProgress,
+            iconRes = R.drawable.ic_sparkle,
+            note = null
         )
         writePosterPng(context, bitmap, "year_${yearProgress.year}.png")
     }
@@ -157,11 +164,14 @@ object ShareCardGenerator {
     }
 
     private fun renderPosterBitmap(
+        context: Context,
         palette: ThemeManager.ThemePalette,
         copy: PosterCopy,
         accent: Int,
         progress: Float?,
-        yearProgress: YearProgress?
+        yearProgress: YearProgress?,
+        iconRes: Int?,
+        note: String?
     ): Bitmap {
         val bitmap = Bitmap.createBitmap(CARD_WIDTH, CARD_HEIGHT, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -185,8 +195,8 @@ object ShareCardGenerator {
             shader = RadialGradient(
                 220f,
                 260f,
-                640f,
-                ThemeManager.withAlpha(accent, 0x55),
+                680f,
+                ThemeManager.withAlpha(accent, 0x72),
                 0x00000000,
                 Shader.TileMode.CLAMP
             )
@@ -195,27 +205,43 @@ object ShareCardGenerator {
             shader = RadialGradient(
                 880f,
                 1040f,
-                620f,
-                ThemeManager.withAlpha(palette.theme.glowSecondary, 0x48),
+                660f,
+                ThemeManager.withAlpha(palette.theme.glowSecondary, 0x62),
                 0x00000000,
                 Shader.TileMode.CLAMP
             )
         }
-        canvas.drawCircle(220f, 260f, 640f, orb1)
-        canvas.drawCircle(880f, 1040f, 620f, orb2)
+        canvas.drawCircle(220f, 260f, 680f, orb1)
+        canvas.drawCircle(880f, 1040f, 660f, orb2)
 
-        // 3. Central Glass Card
+        // 3. Central Specular Liquid Glass Card
         val cardRect = RectF(84f, 120f, CARD_WIDTH - 84f, CARD_HEIGHT - 120f)
         val cardFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = palette.glassHeroSurface }
+        val sheenPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            shader = LinearGradient(
+                cardRect.left,
+                cardRect.top,
+                cardRect.right,
+                cardRect.bottom,
+                intArrayOf(
+                    if (palette.isDark) 0x30FFFFFF else 0x70FFFFFF,
+                    if (palette.isDark) 0x0CFFFFFF else 0x20FFFFFF,
+                    0x02FFFFFF
+                ),
+                null,
+                Shader.TileMode.CLAMP
+            )
+        }
         val cardStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
             strokeWidth = 3f
             color = palette.glassHeroStroke
         }
         canvas.drawRoundRect(cardRect, 58f, 58f, cardFill)
+        canvas.drawRoundRect(cardRect, 58f, 58f, sheenPaint)
         canvas.drawRoundRect(cardRect, 58f, 58f, cardStroke)
 
-        // 4. Typography
+        // 4. Typography & Crisp Icon Badge
         val boldType = Typeface.create("sans-serif-medium", Typeface.BOLD)
         val regularType = Typeface.create("sans-serif", Typeface.NORMAL)
 
@@ -227,12 +253,48 @@ object ShareCardGenerator {
         }
         canvas.drawText(copy.badge, 152f, 236f, badgePaint)
 
+        // Top-right frosted vector icon badge
+        if (iconRes != null) {
+            val badgeCx = CARD_WIDTH - 196f
+            val badgeCy = 224f
+            val badgeBg = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = ThemeManager.withAlpha(accent, 0x33)
+            }
+            val badgeRim = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE
+                strokeWidth = 2.5f
+                color = ThemeManager.withAlpha(accent, 0x80)
+            }
+            canvas.drawCircle(badgeCx, badgeCy, 44f, badgeBg)
+            canvas.drawCircle(badgeCx, badgeCy, 44f, badgeRim)
+            ContextCompat.getDrawable(context, iconRes)?.mutate()?.let { drawable ->
+                drawable.setTint(accent)
+                val half = 24
+                drawable.setBounds(
+                    (badgeCx - half).toInt(),
+                    (badgeCy - half).toInt(),
+                    (badgeCx + half).toInt(),
+                    (badgeCy + half).toInt()
+                )
+                drawable.draw(canvas)
+            }
+        }
+
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = palette.textPrimary
             textSize = 62f
             typeface = boldType
         }
-        canvas.drawText(ellipsize(copy.title, titlePaint, 770f), 152f, 342f, titlePaint)
+        canvas.drawText(ellipsize(copy.title, titlePaint, 670f), 152f, 342f, titlePaint)
+
+        if (!note.isNullOrBlank()) {
+            val notePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = palette.textSecondary
+                textSize = 34f
+                typeface = regularType
+            }
+            canvas.drawText(ellipsize(note, notePaint, 760f), 152f, 398f, notePaint)
+        }
 
         val heroPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = palette.textPrimary

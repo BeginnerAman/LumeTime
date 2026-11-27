@@ -58,6 +58,7 @@ private class ListWidgetFactory(
         val breakdown = TimeCalculator.calculateBreakdown(item, now)
         val isDark = WidgetPrefs.getGlassStyle(context) == WidgetPrefs.WidgetGlassStyle.DARK
         val rowBg = if (isDark) R.drawable.bg_widget_row_dark else R.drawable.bg_widget_row_light
+        val iconBadgeBg = if (isDark) R.drawable.bg_widget_icon_dark else R.drawable.bg_widget_icon_light
         val primaryText = if (isDark) 0xFFF8FAFC.toInt() else 0xFF0F172A.toInt()
         val secondaryText = if (isDark) 0xFFB8C4D9.toInt() else 0xFF475569.toInt()
         val accentText = when {
@@ -83,16 +84,17 @@ private class ListWidgetFactory(
             putExtra(FocusClockActivity.EXTRA_COUNTDOWN_ID, item.id)
         }
 
+        val dateLabel = dateFormatter.format(Date(breakdown.effectiveTargetMillis))
+        val subLine = if (item.note.isNotBlank()) "${item.note} • $dateLabel" else dateLabel
+
         return RemoteViews(context.packageName, R.layout.item_widget_countdown).apply {
             setInt(R.id.widgetRowRoot, "setBackgroundResource", rowBg)
+            setInt(R.id.widgetRowIconBadge, "setBackgroundResource", iconBadgeBg)
             setImageViewResource(R.id.ivWidgetRowIcon, item.resolveIcon().drawableRes)
             setInt(R.id.ivWidgetRowIcon, "setColorFilter", accentText)
             setTextViewText(R.id.tvWidgetRowTitle, item.title)
             setTextColor(R.id.tvWidgetRowTitle, primaryText)
-            setTextViewText(
-                R.id.tvWidgetRowDate,
-                dateFormatter.format(Date(breakdown.effectiveTargetMillis))
-            )
+            setTextViewText(R.id.tvWidgetRowDate, subLine)
             setTextColor(R.id.tvWidgetRowDate, secondaryText)
             setTextViewText(R.id.tvWidgetRowMetric, metricText)
             setTextColor(R.id.tvWidgetRowMetric, accentText)
