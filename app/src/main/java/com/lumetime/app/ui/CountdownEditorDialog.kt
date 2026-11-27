@@ -65,7 +65,8 @@ object CountdownEditorDialog {
         palette: ThemeManager.ThemePalette,
         existing: CountdownItem? = null,
         onSave: (CountdownItem) -> Unit,
-        onDelete: ((CountdownItem) -> Unit)? = null
+        onDelete: ((CountdownItem) -> Unit)? = null,
+        onRequestNotificationPermission: (() -> Unit)? = null
     ) {
         val dialog = Dialog(context, R.style.Theme_LumeTime_GlassDialog)
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
@@ -93,6 +94,7 @@ object CountdownEditorDialog {
         var emoji = existing?.emoji ?: category.defaultEmoji
         var accentHex = existing?.accentHex ?: accentHexChoices.first()
         var isPinned = existing?.isPinned ?: false
+        var reminderEnabled = existing?.reminderEnabled ?: false
 
         binding.tvEditorTitle.text = context.getString(
             if (existing == null) R.string.add_countdown else R.string.edit_countdown
@@ -236,6 +238,19 @@ object CountdownEditorDialog {
             binding.tvPinStatusBadge.text = if (isPinned) "ON" else "OFF"
             binding.tvPinStatusBadge.setTextColor(if (isPinned) palette.accent else palette.textTertiary)
 
+            // Reminder row (Countdown mode only)
+            binding.rowReminderToggle.visibility =
+                if (mode == CountdownMode.COUNTDOWN) View.VISIBLE else View.GONE
+            binding.rowReminderToggle.background = ThemeManager.pillDrawable(context, palette)
+            binding.ivReminderToggleIcon.setColorFilter(
+                if (reminderEnabled) palette.accent else palette.textTertiary
+            )
+            binding.tvReminderToggleLabel.setTextColor(palette.textPrimary)
+            binding.tvReminderStatusBadge.text = if (reminderEnabled) "ON" else "OFF"
+            binding.tvReminderStatusBadge.setTextColor(
+                if (reminderEnabled) palette.accent else palette.textTertiary
+            )
+
             binding.btnSaveCountdown.background = ThemeManager.fabDrawable(context, palette)
         }
 
@@ -308,6 +323,15 @@ object CountdownEditorDialog {
             renderEditor()
         }
 
+        binding.rowReminderToggle.setOnClickListener {
+            ThemeManager.performSoftTick(it)
+            reminderEnabled = !reminderEnabled
+            if (reminderEnabled) {
+                onRequestNotificationPermission?.invoke()
+            }
+            renderEditor()
+        }
+
         binding.btnSaveCountdown.setOnClickListener {
             val rawTitle = binding.etTitle.text?.toString()?.trim().orEmpty()
             if (rawTitle.isEmpty()) {
@@ -330,7 +354,7 @@ object CountdownEditorDialog {
                 accentHex = accentHex,
                 isPinned = isPinned,
                 emoji = emoji,
-                reminderEnabled = existing?.reminderEnabled ?: false
+                reminderEnabled = if (mode == CountdownMode.COUNT_UP) false else reminderEnabled
             )
             onSave(item)
             dialog.dismiss()

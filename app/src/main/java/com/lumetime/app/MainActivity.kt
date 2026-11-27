@@ -1,17 +1,24 @@
 package com.lumetime.app
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.lumetime.app.core.ReminderScheduler
 import com.lumetime.app.core.TimeCalculator
 import com.lumetime.app.data.CountdownFilter
 import com.lumetime.app.data.CountdownSortMode
@@ -19,6 +26,7 @@ import com.lumetime.app.data.CountdownStore
 import com.lumetime.app.databinding.ActivityMainBinding
 import com.lumetime.app.model.CountdownCategory
 import com.lumetime.app.model.CountdownItem
+import com.lumetime.app.ui.BackupDialog
 import com.lumetime.app.ui.CountdownAdapter
 import com.lumetime.app.ui.CountdownEditorDialog
 import com.lumetime.app.ui.FilterChipAdapter
@@ -36,6 +44,55 @@ import java.util.Date
 import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
+
+    private val requestNotificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (!granted) {
+            Toast.makeText(
+                this,
+                "Notification permission is needed to show countdown alerts",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    private val exportBackupLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri == null) return@registerForActivityResult
+        runCatching {
+            val payload = store.exportJson()
+            contentResolver.openOutputStream(uri)?.use { out ->
+                out.write(payload.toByteArray(Charsets.UTF_8))
+            }
+            Toast.makeText(this, "Backup exported", Toast.LENGTH_SHORT).show()
+        }.onFailure {
+            Toast.makeText(this, "Export failed", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private val importBackupLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri == null) return@registerForActivityResult
+        runCatching {
+            val raw = contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use {
+                it.readText()
+            }.orEmpty()
+            val count = store.importJson(raw)
+            if (count > 0) {
+                reloadCountdowns(animateHeroRoll = false, forceReloadFromDisk = true)
+                WidgetScheduler.refreshAllWidgets(this)
+                ReminderScheduler.rescheduleAll(this)
+                Toast.makeText(this, "Restored $count countdown(s)", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "No countdowns found in file", Toast.LENGTH_SHORT).show()
+            }
+        }.onFailure {
+            Toast.makeText(this, "Could not read backup file", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var store: CountdownStore
@@ -193,11 +250,25 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupInteractions() {
+        FocusAnimations.attachGlassPress(binding.btnBackup, 0.92f)
         FocusAnimations.attachGlassPress(binding.btnWidgetsStudio, 0.95f)
         FocusAnimations.attachGlassPress(binding.btnThemePicker, 0.95f)
         FocusAnimations.attachGlassPress(binding.cardYearPulse, 0.985f)
         FocusAnimations.attachGlassPress(binding.cardHeroCountdown, 0.985f)
         FocusAnimations.attachGlassPress(binding.fabAddCountdown, 0.94f)
+
+        binding.btnBackup.setOnClickListener { view ->
+            ThemeManager.performTapHaptic(view)
+            BackupDialog.show(
+                context = this,
+                palette = ThemeManager.getPalette(this),
+                countdownCount = allItems.size,
+                onExportClick = { exportBackupLauncher.launch("lumetime_backup.json") },
+                onRestoreClick = {
+                    importBackupLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
+                }
+            )
+        }
 
         binding.btnWidgetsStudio.setOnClickListener { view ->
             ThemeManager.performTapHaptic(view)
@@ -272,6 +343,7 @@ class MainActivity : AppCompatActivity() {
             binding.undoBanner.visibility = View.GONE
             recentlyDeletedItem = null
             allItems = store.upsert(restore)
+            ReminderScheduler.scheduleForItem(this, restore)
             reloadCountdowns(animateHeroRoll = false)
             WidgetScheduler.refreshAllWidgets(this)
         }
@@ -285,18 +357,33 @@ class MainActivity : AppCompatActivity() {
             existing = existing,
             onSave = { saved ->
                 allItems = store.upsert(saved)
+                ReminderScheduler.scheduleForItem(this, saved)
                 reloadCountdowns(animateHeroRoll = false)
                 WidgetScheduler.refreshAllWidgets(this)
             },
             onDelete = { deleted ->
                 store.delete(deleted.id)
+                ReminderScheduler.cancelForItem(this, deleted.id)
                 allItems = store.loadAll()
                 recentlyDeletedItem = deleted
                 showUndoBanner(deleted.title)
                 reloadCountdowns(animateHeroRoll = false)
                 WidgetScheduler.refreshAllWidgets(this)
-            }
+            },
+            onRequestNotificationPermission = { ensureNotificationPermission() }
         )
+    }
+
+    private fun ensureNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val granted = ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!granted) {
+                requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
     }
 
     private fun showUndoBanner(title: String) {
@@ -358,6 +445,9 @@ class MainActivity : AppCompatActivity() {
 
         binding.tvBrandTitle.setTextColor(palette.textPrimary)
         binding.tvTodayDate.setTextColor(palette.textSecondary)
+
+        binding.btnBackup.background = ThemeManager.pillDrawable(this, palette)
+        binding.btnBackup.setColorFilter(palette.accent)
 
         binding.btnWidgetsStudio.background = ThemeManager.pillDrawable(this, palette)
         binding.ivWidgetsIcon.setColorFilter(palette.accent)

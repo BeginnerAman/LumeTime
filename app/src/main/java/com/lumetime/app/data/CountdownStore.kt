@@ -123,6 +123,41 @@ class CountdownStore(
         return updated.toList()
     }
 
+    @Synchronized
+    fun exportJson(nowMillis: Long = System.currentTimeMillis()): String {
+        val list = loadAll(nowMillis)
+        return CountdownJsonCodec.encode(list)
+    }
+
+    /**
+     * Merges valid items from [rawJson] into the store, preserving existing items
+     * and ensuring at most one pinned hero item. Returns the count of imported/updated entries.
+     */
+    @Synchronized
+    fun importJson(rawJson: String): Int {
+        val incoming = CountdownJsonCodec.decode(rawJson)
+        if (incoming.isEmpty()) return 0
+
+        val current = ensureLoadedLocked().toMutableList()
+        val byId = current.associateBy { it.id }.toMutableMap()
+        val hasExistingPin = current.any { it.isPinned }
+
+        incoming.forEach { item ->
+            val normalized = if (hasExistingPin && item.isPinned && byId[item.id]?.isPinned != true) {
+                item.copy(isPinned = false)
+            } else {
+                item
+            }
+            byId[normalized.id] = normalized
+        }
+
+        val merged = byId.values.toMutableList()
+        cachedItems = merged
+        persistLocked(merged)
+        prefs?.edit()?.putBoolean(KEY_SEEDED, true)?.apply()
+        return incoming.size
+    }
+
     private fun ensureLoadedLocked(): MutableList<CountdownItem> {
         cachedItems?.let { return it }
         loadAll()

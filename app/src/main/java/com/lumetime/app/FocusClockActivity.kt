@@ -1,17 +1,23 @@
 package com.lumetime.app
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.WindowManager
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
+import com.lumetime.app.core.ReminderScheduler
 import com.lumetime.app.core.TimeCalculator
 import com.lumetime.app.data.CountdownStore
 import com.lumetime.app.databinding.ActivityFocusClockBinding
@@ -31,6 +37,10 @@ import java.util.Locale
  * Full-screen Zen Focus Clock and Landscape Desk Clock for any countdown or milestone.
  */
 class FocusClockActivity : AppCompatActivity() {
+
+    private val requestNotificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { }
 
     private lateinit var binding: ActivityFocusClockBinding
     private lateinit var store: CountdownStore
@@ -167,6 +177,7 @@ class FocusClockActivity : AppCompatActivity() {
                 existing = item,
                 onSave = { updated ->
                     store.upsert(updated)
+                    ReminderScheduler.scheduleForItem(this, updated)
                     currentItem = updated
                     firstRender = true
                     applyTheme()
@@ -175,8 +186,22 @@ class FocusClockActivity : AppCompatActivity() {
                 },
                 onDelete = { deleted ->
                     store.delete(deleted.id)
+                    ReminderScheduler.cancelForItem(this, deleted.id)
                     WidgetScheduler.refreshAllWidgets(this)
                     finish()
+                },
+                onRequestNotificationPermission = {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        val granted = ContextCompat.checkSelfPermission(
+                            this,
+                            Manifest.permission.POST_NOTIFICATIONS
+                        ) == PackageManager.PERMISSION_GRANTED
+                        if (!granted) {
+                            requestNotificationPermissionLauncher.launch(
+                                Manifest.permission.POST_NOTIFICATIONS
+                            )
+                        }
+                    }
                 }
             )
         }

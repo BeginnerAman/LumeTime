@@ -129,4 +129,30 @@ class CountdownStoreTest {
         )
         assertEquals(listOf("4"), onlyCountUp.map { it.id })
     }
+
+    @Test
+    fun `exportJson and importJson merge items and preserve single pin`() {
+        val now = 1_795_000_000_000L
+        val fileA = File(tempFolder.root, "a.json")
+        val storeA = CountdownStore(fileA)
+        storeA.upsert(CountdownItem("1", "First", now + 10_000L, now, isPinned = true))
+
+        val incomingJson = CountdownJsonCodec.encode(
+            listOf(
+                CountdownItem("2", "Imported Pin", now + 20_000L, now, isPinned = true),
+                CountdownItem("3", "Imported Normal", now + 30_000L, now, isPinned = false)
+            )
+        )
+
+        val importedCount = storeA.importJson(incomingJson)
+        assertEquals(2, importedCount)
+
+        val all = storeA.loadAll(now, forceReload = true)
+        assertEquals(3, all.size)
+        assertEquals(1, all.count { it.isPinned })
+        assertEquals("1", all.first { it.isPinned }.id)
+
+        val exported = storeA.exportJson(now)
+        assertEquals(3, CountdownJsonCodec.decode(exported).size)
+    }
 }

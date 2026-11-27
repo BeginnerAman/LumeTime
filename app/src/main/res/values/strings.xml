@@ -43,4 +43,11 @@
     <string name="widget_hero_desc">LumeTime Hero Countdown (Days, Hours &amp; Live Timer)</string>
     <string name="widget_list_desc">LumeTime Multi-Countdown Glass List</string>
     <string name="widget_pin_fallback">Long-press your Home Screen → Widgets → LumeTime to add</string>
+    <string name="reminder_toggle_label">Remind me (24h &amp; event day)</string>
+    <string name="reminder_channel_name">Countdown Reminders</string>
+    <string name="reminder_channel_desc">Optional zero-drain local alerts before and on event day</string>
+    <string name="backup_title">Backup &amp; Restore</string>
+    <string name="backup_subtitle">Export or import your countdowns as a lightweight JSON file</string>
+    <string name="export_backup_btn">Export JSON Backup</string>
+    <string name="restore_backup_btn">Restore from JSON</string>
 </resources>
