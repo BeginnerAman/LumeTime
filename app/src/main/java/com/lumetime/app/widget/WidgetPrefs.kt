@@ -12,6 +12,7 @@ object WidgetPrefs {
     private const val KEY_GLASS_STYLE = "widget_glass_style"
     private const val KEY_OPACITY = "widget_opacity"
     private const val KEY_LIVE_CHRONOMETER = "widget_live_chronometer"
+    private const val KEY_HERO_TARGET_PREFIX = "hero_target_"
 
     enum class WidgetGlassStyle(val id: String, val label: String) {
         DARK("dark", "Dark Glass"),
@@ -68,6 +69,26 @@ object WidgetPrefs {
             .edit()
             .putBoolean(KEY_LIVE_CHRONOMETER, enabled)
             .apply()
+    }
+
+    fun getHeroTargetId(context: Context, appWidgetId: Int): String? {
+        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getString("$KEY_HERO_TARGET_PREFIX$appWidgetId", null)
+            ?.takeIf { it.isNotBlank() }
+    }
+
+    fun setHeroTargetId(context: Context, appWidgetId: Int, countdownId: String?) {
+        val editor = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
+        if (countdownId.isNullOrBlank()) {
+            editor.remove("$KEY_HERO_TARGET_PREFIX$appWidgetId")
+        } else {
+            editor.putString("$KEY_HERO_TARGET_PREFIX$appWidgetId", countdownId)
+        }
+        editor.apply()
+    }
+
+    fun clearHeroTargetId(context: Context, appWidgetId: Int) {
+        setHeroTargetId(context, appWidgetId, null)
     }
 
     fun resolveBackgroundRes(style: WidgetGlassStyle, opacity: WidgetOpacity): Int {

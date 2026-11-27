@@ -65,4 +65,6 @@
     <string name="quick_focus_label">Focus</string>
     <string name="quick_date_calc_label">Date Calc</string>
     <string name="reset_streak_label">Restart Streak from Now</string>
+    <string name="widget_pulse_grid_desc">LumeTime 4-in-1 Time Pulse (Day, Week, Month, Year)</string>
+    <string name="configure_hero_widget_title">Widget Countdown</string>
 </resources>

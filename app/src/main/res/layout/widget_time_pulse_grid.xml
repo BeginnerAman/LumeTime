@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetPulseGridRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_widget_dark_balanced"
+    android:gravity="center_vertical"
+    android:orientation="vertical"
+    android:paddingHorizontal="15dp"
+    android:paddingVertical="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tvPulseGridHeader"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.06"
+            android:text="TIME PULSE"
+            android:textColor="#FF67E8F9"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvPulseGridDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="#FFB8C4D9"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <!-- TODAY -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tvPulseTodayLabel"
+            android:layout_width="56dp"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:text="TODAY"
+            android:textColor="#FFF8FAFC"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <ProgressBar
+            android:id="@+id/pbPulseToday"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="0dp"
+            android:layout_height="6dp"
+            android:layout_marginHorizontal="8dp"
+            android:layout_weight="1"
+            android:max="1000"
+            android:progressDrawable="@drawable/bg_widget_progress" />
+
+        <TextView
+            android:id="@+id/tvPulseTodayVal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:textColor="#FFB8C4D9"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <!-- WEEK -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="7dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tvPulseWeekLabel"
+            android:layout_width="56dp"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:text="WEEK"
+            android:textColor="#FFF8FAFC"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <ProgressBar
+            android:id="@+id/pbPulseWeek"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="0dp"
+            android:layout_height="6dp"
+            android:layout_marginHorizontal="8dp"
+            android:layout_weight="1"
+            android:max="1000"
+            android:progressDrawable="@drawable/bg_widget_progress" />
+
+        <TextView
+            android:id="@+id/tvPulseWeekVal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:textColor="#FFB8C4D9"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <!-- MONTH -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="7dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tvPulseMonthLabel"
+            android:layout_width="56dp"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:text="MONTH"
+            android:textColor="#FFF8FAFC"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <ProgressBar
+            android:id="@+id/pbPulseMonth"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="0dp"
+            android:layout_height="6dp"
+            android:layout_marginHorizontal="8dp"
+            android:layout_weight="1"
+            android:max="1000"
+            android:progressDrawable="@drawable/bg_widget_progress" />
+
+        <TextView
+            android:id="@+id/tvPulseMonthVal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:textColor="#FFB8C4D9"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <!-- YEAR -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="7dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tvPulseYearLabel"
+            android:layout_width="56dp"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:text="YEAR"
+            android:textColor="#FFF8FAFC"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <ProgressBar
+            android:id="@+id/pbPulseYear"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="0dp"
+            android:layout_height="6dp"
+            android:layout_marginHorizontal="8dp"
+            android:layout_weight="1"
+            android:max="1000"
+            android:progressDrawable="@drawable/bg_widget_progress" />
+
+        <TextView
+            android:id="@+id/tvPulseYearVal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:textColor="#FFB8C4D9"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+</LinearLayout>

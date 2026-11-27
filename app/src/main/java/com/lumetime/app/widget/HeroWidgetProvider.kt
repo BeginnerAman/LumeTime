@@ -35,6 +35,11 @@ class HeroWidgetProvider : AppWidgetProvider() {
         WidgetScheduler.scheduleNextRefresh(context)
     }
 
+    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
+        appWidgetIds.forEach { WidgetPrefs.clearHeroTargetId(context, it) }
+        super.onDeleted(context, appWidgetIds)
+    }
+
     override fun onDisabled(context: Context) {
         if (!WidgetScheduler.hasAnyActiveWidgets(context)) {
             WidgetScheduler.cancelScheduledRefresh(context)
@@ -49,7 +54,7 @@ class HeroWidgetProvider : AppWidgetProvider() {
         ) {
             val now = System.currentTimeMillis()
             val items = CountdownStore.create(context).loadAll(now, forceReload = true)
-            val hero = CountdownStore.selectHeroItem(items, now)
+            val fallbackHero = CountdownStore.selectHeroItem(items, now)
 
             val style = WidgetPrefs.getGlassStyle(context)
             val opacity = WidgetPrefs.getOpacity(context)
@@ -63,6 +68,12 @@ class HeroWidgetProvider : AppWidgetProvider() {
             val accentText = if (isDark) 0xFF67E8F9.toInt() else 0xFF0284C7.toInt()
 
             appWidgetIds.forEach { widgetId ->
+                val configuredId = WidgetPrefs.getHeroTargetId(context, widgetId)
+                val hero = if (configuredId != null) {
+                    items.firstOrNull { it.id == configuredId } ?: fallbackHero
+                } else {
+                    fallbackHero
+                }
                 val views = RemoteViews(context.packageName, R.layout.widget_hero_countdown)
                 views.setInt(R.id.widgetHeroRoot, "setBackgroundResource", bgRes)
                 views.setInt(R.id.widgetHeroIconBadge, "setBackgroundResource", iconBadgeBg)
@@ -104,6 +115,7 @@ class HeroWidgetProvider : AppWidgetProvider() {
                         R.id.tvWidgetHeroTag,
                         when {
                             breakdown.isCountUp -> "MILESTONE"
+                            configuredId != null -> hero.category.label.uppercase(Locale.US)
                             hero.isPinned -> "PINNED FOCUS"
                             else -> "UP NEXT"
                         }

@@ -16,6 +16,7 @@ import com.lumetime.app.core.TimeCalculator
 import com.lumetime.app.databinding.DialogWidgetStudioBinding
 import com.lumetime.app.widget.HeroWidgetProvider
 import com.lumetime.app.widget.ListWidgetProvider
+import com.lumetime.app.widget.TimePulseGridWidgetProvider
 import com.lumetime.app.widget.WidgetPrefs
 import com.lumetime.app.widget.WidgetScheduler
 import com.lumetime.app.widget.YearWidgetProvider
@@ -124,6 +125,7 @@ object WidgetStudioDialog {
             // Pin buttons
             listOf(
                 binding.btnPinYearWidget to YearWidgetProvider::class.java,
+                binding.btnPinPulseGridWidget to TimePulseGridWidgetProvider::class.java,
                 binding.btnPinHeroWidget to HeroWidgetProvider::class.java,
                 binding.btnPinListWidget to ListWidgetProvider::class.java
             ).forEach { (btn, providerClass) ->

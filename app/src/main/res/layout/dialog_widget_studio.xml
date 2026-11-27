@@ -245,6 +245,19 @@
             android:textSize="13sp" />
 
         <TextView
+            android:id="@+id/btnPinPulseGridWidget"
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
+            android:layout_marginTop="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="14dp"
+            android:text="+ Pin 4-in-1 Time Pulse (Today/Week/Month/Year)"
+            android:textSize="13sp" />
+
+        <TextView
             android:id="@+id/btnPinHeroWidget"
             android:layout_width="match_parent"
             android:layout_height="42dp"
@@ -254,7 +267,7 @@
             android:fontFamily="sans-serif-medium"
             android:gravity="center_vertical"
             android:paddingHorizontal="14dp"
-            android:text="+ Pin Hero Countdown (2×2)"
+            android:text="+ Pin Hero Countdown (Pick any card per widget)"
             android:textSize="13sp" />
 
         <TextView

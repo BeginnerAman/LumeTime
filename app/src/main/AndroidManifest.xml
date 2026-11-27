@@ -29,6 +29,16 @@
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:theme="@style/Theme.LumeTime" />
 
+        <activity
+            android:name=".widget.HeroWidgetConfigureActivity"
+            android:exported="true"
+            android:label="@string/configure_hero_widget_title"
+            android:theme="@style/Theme.LumeTime">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <receiver
             android:name=".widget.YearWidgetProvider"
             android:exported="true"
@@ -39,6 +49,18 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_year_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.TimePulseGridWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_pulse_grid_desc">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_pulse_grid_info" />
         </receiver>
 
         <receiver

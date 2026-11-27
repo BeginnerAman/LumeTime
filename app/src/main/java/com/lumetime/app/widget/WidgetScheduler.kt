@@ -50,6 +50,7 @@ object WidgetScheduler {
         val manager = AppWidgetManager.getInstance(context)
         val providers = listOf(
             YearWidgetProvider::class.java,
+            TimePulseGridWidgetProvider::class.java,
             HeroWidgetProvider::class.java,
             ListWidgetProvider::class.java
         )
@@ -88,6 +89,13 @@ object WidgetScheduler {
         val yearIds = manager.getAppWidgetIds(ComponentName(context, YearWidgetProvider::class.java))
         if (yearIds.isNotEmpty()) {
             YearWidgetProvider.updateWidgets(context, manager, yearIds)
+        }
+
+        val pulseGridIds = manager.getAppWidgetIds(
+            ComponentName(context, TimePulseGridWidgetProvider::class.java)
+        )
+        if (pulseGridIds.isNotEmpty()) {
+            TimePulseGridWidgetProvider.updateWidgets(context, manager, pulseGridIds)
         }
 
         val heroIds = manager.getAppWidgetIds(ComponentName(context, HeroWidgetProvider::class.java))
