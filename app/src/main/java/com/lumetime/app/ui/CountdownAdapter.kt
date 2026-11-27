@@ -8,8 +8,10 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.lumetime.app.core.TimeCalculator
+import com.lumetime.app.data.CountdownStore
 import com.lumetime.app.databinding.ItemCountdownBinding
 import com.lumetime.app.model.CountdownItem
+import com.lumetime.app.model.CountdownMode
 import com.lumetime.app.model.RepeatRule
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -22,7 +24,8 @@ import java.util.Locale
 class CountdownAdapter(
     private val onCardClick: (CountdownItem) -> Unit,
     private val onCardLongClick: (CountdownItem) -> Unit,
-    private val onPinClick: (CountdownItem) -> Unit
+    private val onPinClick: (CountdownItem) -> Unit,
+    private val onCheckInClick: (CountdownItem) -> Unit = {}
 ) : ListAdapter<CountdownItem, CountdownAdapter.CountdownViewHolder>(DiffCallback) {
 
     private var palette: ThemeManager.ThemePalette? = null
@@ -127,6 +130,29 @@ class CountdownAdapter(
                 binding.btnPinItem.setOnClickListener {
                     ThemeManager.performSoftTick(it)
                     onPinClick(item)
+                }
+
+                if (item.mode == CountdownMode.COUNT_UP) {
+                    val todayKey = CountdownStore.todayDayKey(currentNowMillis)
+                    val checkedToday = item.lastCheckInDayKey == todayKey
+                    binding.btnCheckIn.visibility = View.VISIBLE
+                    binding.btnCheckIn.text = when {
+                        checkedToday && item.checkInCount > 0 -> "Checked • ${item.checkInCount}d"
+                        item.checkInCount > 0 -> "Check In • ${item.checkInCount}d"
+                        else -> "Check In Today"
+                    }
+                    binding.btnCheckIn.background = if (checkedToday) {
+                        ThemeManager.tintedTagDrawable(context, pal, itemAccent)
+                    } else {
+                        ThemeManager.pillDrawable(context, pal)
+                    }
+                    binding.btnCheckIn.setTextColor(if (checkedToday) itemAccent else pal.textPrimary)
+                    binding.btnCheckIn.setOnClickListener {
+                        ThemeManager.performTapHaptic(it)
+                        onCheckInClick(item)
+                    }
+                } else {
+                    binding.btnCheckIn.visibility = View.GONE
                 }
             }
 

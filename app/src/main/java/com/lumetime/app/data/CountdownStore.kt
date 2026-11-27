@@ -9,7 +9,11 @@ import com.lumetime.app.model.CountdownItem
 import com.lumetime.app.model.CountdownMode
 import com.lumetime.app.model.RepeatRule
 import java.io.File
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import java.util.UUID
 
 /**
@@ -125,6 +129,57 @@ class CountdownStore(
         return updated.toList()
     }
 
+    /**
+     * Records a daily streak check-in for a Count-Up item (at most once per calendar day).
+     */
+    @Synchronized
+    fun checkInMilestone(
+        id: String,
+        nowMillis: Long = System.currentTimeMillis(),
+        timeZone: TimeZone = TimeZone.getDefault()
+    ): List<CountdownItem> {
+        val list = ensureLoadedLocked()
+        val dayKey = todayDayKey(nowMillis, timeZone)
+        val idx = list.indexOfFirst { it.id == id }
+        if (idx < 0) return list.toList()
+        val current = list[idx]
+        if (current.lastCheckInDayKey == dayKey) {
+            return list.toList()
+        }
+        val updated = list.toMutableList()
+        updated[idx] = current.copy(
+            checkInCount = current.checkInCount + 1,
+            lastCheckInDayKey = dayKey
+        )
+        cachedItems = updated
+        persistLocked(updated)
+        return updated.toList()
+    }
+
+    /**
+     * Restarts a Count-Up streak / milestone from [nowMillis], clearing its check-in counter.
+     */
+    @Synchronized
+    fun resetMilestone(
+        id: String,
+        nowMillis: Long = System.currentTimeMillis()
+    ): List<CountdownItem> {
+        val list = ensureLoadedLocked()
+        val idx = list.indexOfFirst { it.id == id }
+        if (idx < 0) return list.toList()
+        val cleanNow = PrecisionClockTicker.normalizeToWholeSecond(nowMillis)
+        val updated = list.toMutableList()
+        updated[idx] = list[idx].copy(
+            targetEpochMillis = cleanNow,
+            startEpochMillis = cleanNow,
+            checkInCount = 0,
+            lastCheckInDayKey = ""
+        )
+        cachedItems = updated
+        persistLocked(updated)
+        return updated.toList()
+    }
+
     @Synchronized
     fun exportJson(nowMillis: Long = System.currentTimeMillis()): String {
         val list = loadAll(nowMillis)
@@ -181,6 +236,15 @@ class CountdownStore(
         private const val PREFS_NAME = "lumetime_prefs"
         private const val FILE_NAME = "countdowns.json"
         private const val KEY_SEEDED = "starter_countdowns_seeded"
+
+        fun todayDayKey(
+            nowMillis: Long = System.currentTimeMillis(),
+            timeZone: TimeZone = TimeZone.getDefault()
+        ): String {
+            return SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+                this.timeZone = timeZone
+            }.format(Date(nowMillis))
+        }
 
         fun create(context: Context): CountdownStore {
             val file = File(context.filesDir, FILE_NAME)

@@ -376,6 +376,21 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
+        <!-- Reset Streak Row (Count-Up edit mode only) -->
+        <TextView
+            android:id="@+id/btnResetStreak"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_marginTop="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:text="@string/reset_streak_label"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/btnSaveCountdown"
             android:layout_width="match_parent"

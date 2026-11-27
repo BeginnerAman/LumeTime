@@ -69,7 +69,10 @@ object CountdownEditorDialog {
         existing: CountdownItem? = null,
         onSave: (CountdownItem) -> Unit,
         onDelete: ((CountdownItem) -> Unit)? = null,
-        onRequestNotificationPermission: (() -> Unit)? = null
+        onRequestNotificationPermission: (() -> Unit)? = null,
+        prefillTargetMillis: Long? = null,
+        prefillTitle: String? = null,
+        onResetStreak: ((CountdownItem) -> Unit)? = null
     ) {
         val dialog = GlassSheetHelper.createBottomSheet(context)
         val binding = DialogCountdownEditorBinding.inflate(LayoutInflater.from(context))
@@ -77,10 +80,12 @@ object CountdownEditorDialog {
         GlassSheetHelper.configureBottomWindow(dialog, context)
 
         val now = System.currentTimeMillis()
-        val initialTarget = existing?.targetEpochMillis ?: (now + 7L * TimeCalculator.MILLIS_PER_DAY)
+        val initialTarget = existing?.targetEpochMillis
+            ?: prefillTargetMillis
+            ?: (now + 7L * TimeCalculator.MILLIS_PER_DAY)
         val selectedCal = Calendar.getInstance().apply {
             timeInMillis = initialTarget
-            if (existing == null) {
+            if (existing == null && prefillTargetMillis == null) {
                 set(Calendar.HOUR_OF_DAY, 9)
                 set(Calendar.MINUTE, 0)
                 set(Calendar.SECOND, 0)
@@ -99,7 +104,7 @@ object CountdownEditorDialog {
         binding.tvEditorTitle.text = context.getString(
             if (existing == null) R.string.add_countdown else R.string.edit_countdown
         )
-        binding.etTitle.setText(existing?.title ?: "")
+        binding.etTitle.setText(existing?.title ?: prefillTitle.orEmpty())
         binding.etNote.setText(existing?.note ?: "")
         binding.templatesSection.visibility = if (existing == null) View.VISIBLE else View.GONE
 
@@ -286,6 +291,13 @@ object CountdownEditorDialog {
                 if (reminderEnabled) palette.accent else palette.textTertiary
             )
 
+            val showResetStreak = existing != null &&
+                mode == CountdownMode.COUNT_UP &&
+                onResetStreak != null
+            binding.btnResetStreak.visibility = if (showResetStreak) View.VISIBLE else View.GONE
+            binding.btnResetStreak.background = ThemeManager.pillDrawable(context, palette)
+            binding.btnResetStreak.setTextColor(palette.warningAmber)
+
             binding.btnSaveCountdown.background = ThemeManager.fabDrawable(context, palette)
         }
 
@@ -370,6 +382,13 @@ object CountdownEditorDialog {
             renderEditor()
         }
 
+        binding.btnResetStreak.setOnClickListener {
+            val targetItem = existing ?: return@setOnClickListener
+            ThemeManager.performTapHaptic(it)
+            onResetStreak?.invoke(targetItem)
+            dialog.dismiss()
+        }
+
         binding.btnSaveCountdown.setOnClickListener {
             val rawTitle = binding.etTitle.text?.toString()?.trim().orEmpty()
             if (rawTitle.isEmpty()) {
@@ -397,7 +416,11 @@ object CountdownEditorDialog {
                 isPinned = isPinned,
                 emoji = selectedIconId,
                 reminderEnabled = if (mode == CountdownMode.COUNT_UP) false else reminderEnabled,
-                note = rawNote
+                note = rawNote,
+                checkInCount = if (mode == CountdownMode.COUNT_UP) existing?.checkInCount ?: 0 else 0,
+                lastCheckInDayKey = if (mode == CountdownMode.COUNT_UP) {
+                    existing?.lastCheckInDayKey.orEmpty()
+                } else ""
             )
             onSave(item)
             dialog.dismiss()

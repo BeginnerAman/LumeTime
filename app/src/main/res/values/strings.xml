@@ -60,4 +60,9 @@
     <string name="pulse_week">Week</string>
     <string name="pulse_month">Month</string>
     <string name="pulse_year">Year</string>
+    <string name="focus_timer_title">Focus Timer &amp; Stopwatch</string>
+    <string name="date_calc_title">Date &amp; Age Calculator</string>
+    <string name="quick_focus_label">Focus</string>
+    <string name="quick_date_calc_label">Date Calc</string>
+    <string name="reset_streak_label">Restart Streak from Now</string>
 </resources>

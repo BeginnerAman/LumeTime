@@ -21,12 +21,14 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.lumetime.app.core.FocusTimerEngine
 import com.lumetime.app.core.PrecisionClockTicker
 import com.lumetime.app.core.ReminderScheduler
 import com.lumetime.app.core.TimeCalculator
 import com.lumetime.app.data.CountdownFilter
 import com.lumetime.app.data.CountdownSortMode
 import com.lumetime.app.data.CountdownStore
+import com.lumetime.app.data.FocusTimerStore
 import com.lumetime.app.databinding.ActivityMainBinding
 import com.lumetime.app.model.CountdownCategory
 import com.lumetime.app.model.CountdownItem
@@ -35,8 +37,10 @@ import com.lumetime.app.ui.BackupDialog
 import com.lumetime.app.ui.CountdownAdapter
 import com.lumetime.app.ui.CountdownDisplayFormat
 import com.lumetime.app.ui.CountdownEditorDialog
+import com.lumetime.app.ui.DateCalculatorDialog
 import com.lumetime.app.ui.FilterChipAdapter
 import com.lumetime.app.ui.FocusAnimations
+import com.lumetime.app.ui.FocusTimerDialog
 import com.lumetime.app.ui.ShareCardGenerator
 import com.lumetime.app.ui.ThemeManager
 import com.lumetime.app.ui.ThemePickerDialog
@@ -133,6 +137,7 @@ class MainActivity : AppCompatActivity() {
         override fun run() {
             val rawNow = System.currentTimeMillis()
             val snappedNow = PrecisionClockTicker.snapNowToSecond(rawNow)
+            updateQuickToolsBar(rawNow)
             updateYearPulse(snappedNow)
             updateHeroCountdown(snappedNow, animateRoll = true)
             countdownAdapter.refreshTick(snappedNow)
@@ -278,6 +283,10 @@ class MainActivity : AppCompatActivity() {
                 allItems = store.togglePin(item.id)
                 reloadCountdowns(animateHeroRoll = false)
                 WidgetScheduler.refreshAllWidgets(this)
+            },
+            onCheckInClick = { item ->
+                allItems = store.checkInMilestone(item.id)
+                reloadCountdowns(animateHeroRoll = false)
             }
         )
         countdownAdapter.setDisplayFormat(displayFormat)
@@ -291,6 +300,8 @@ class MainActivity : AppCompatActivity() {
         FocusAnimations.attachGlassPress(binding.btnBackup, 0.92f)
         FocusAnimations.attachGlassPress(binding.btnWidgetsStudio, 0.92f)
         FocusAnimations.attachGlassPress(binding.btnThemePicker, 0.92f)
+        FocusAnimations.attachGlassPress(binding.btnFocusTimerTool, 0.96f)
+        FocusAnimations.attachGlassPress(binding.btnDateCalcTool, 0.96f)
         FocusAnimations.attachGlassPress(binding.cardYearPulse, 0.985f)
         FocusAnimations.attachGlassPress(binding.cardHeroCountdown, 0.985f)
         FocusAnimations.attachGlassPress(binding.fabAddCountdown, 0.94f)
@@ -354,6 +365,20 @@ class MainActivity : AppCompatActivity() {
             ThemeManager.performTapHaptic(view)
             ThemePickerDialog.show(this) { _, _ ->
                 applyTheme(animate = true)
+            }
+        }
+
+        binding.btnFocusTimerTool.setOnClickListener { view ->
+            ThemeManager.performTapHaptic(view)
+            FocusTimerDialog.show(this, ThemeManager.getPalette(this)) {
+                updateQuickToolsBar(System.currentTimeMillis())
+            }
+        }
+
+        binding.btnDateCalcTool.setOnClickListener { view ->
+            ThemeManager.performTapHaptic(view)
+            DateCalculatorDialog.show(this, ThemeManager.getPalette(this)) { targetMillis, suggestedTitle ->
+                openEditor(null, prefillTargetMillis = targetMillis, prefillTitle = suggestedTitle)
             }
         }
 
@@ -444,12 +469,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun openEditor(existing: CountdownItem?) {
+    private fun openEditor(
+        existing: CountdownItem?,
+        prefillTargetMillis: Long? = null,
+        prefillTitle: String? = null
+    ) {
         val palette = ThemeManager.getPalette(this)
         CountdownEditorDialog.show(
             context = this,
             palette = palette,
             existing = existing,
+            prefillTargetMillis = prefillTargetMillis,
+            prefillTitle = prefillTitle,
             onSave = { saved ->
                 allItems = store.upsert(saved)
                 ReminderScheduler.scheduleForItem(this, saved)
@@ -464,6 +495,12 @@ class MainActivity : AppCompatActivity() {
                 showUndoBanner(deleted.title)
                 reloadCountdowns(animateHeroRoll = false)
                 WidgetScheduler.refreshAllWidgets(this)
+            },
+            onResetStreak = { milestone ->
+                allItems = store.resetMilestone(milestone.id)
+                reloadCountdowns(animateHeroRoll = false)
+                WidgetScheduler.refreshAllWidgets(this)
+                Toast.makeText(this, "Streak restarted from now", Toast.LENGTH_SHORT).show()
             },
             onRequestNotificationPermission = { ensureNotificationPermission() }
         )
@@ -581,6 +618,15 @@ class MainActivity : AppCompatActivity() {
         binding.btnThemePicker.background = ThemeManager.pillDrawable(this, palette)
         binding.viewThemeSwatch.background = ThemeManager.swatchOrbDrawable(this, palette.theme)
 
+        binding.btnFocusTimerTool.background = ThemeManager.pillDrawable(this, palette)
+        binding.ivFocusToolIcon.setColorFilter(palette.accent)
+        binding.tvFocusToolLabel.setTextColor(palette.textPrimary)
+
+        binding.btnDateCalcTool.background = ThemeManager.pillDrawable(this, palette)
+        binding.ivDateCalcToolIcon.setColorFilter(palette.accent)
+        binding.tvDateCalcToolLabel.setTextColor(palette.textPrimary)
+        updateQuickToolsBar(System.currentTimeMillis())
+
         binding.searchPill.background = ThemeManager.pillDrawable(this, palette)
         binding.ivSearchPillIcon.setColorFilter(palette.accent)
         binding.etSearch.setTextColor(palette.textPrimary)
@@ -657,6 +703,23 @@ class MainActivity : AppCompatActivity() {
         binding.fabAddCountdown.background = ThemeManager.fabDrawable(this, palette)
 
         updateHeroCountdown(System.currentTimeMillis(), animateRoll = false)
+    }
+
+    private fun updateQuickToolsBar(now: Long) {
+        val timerState = FocusTimerStore.load(this)
+        val palette = ThemeManager.getPalette(this)
+        if (timerState.isTimerRunning) {
+            val rem = FocusTimerEngine.remainingTimerMillis(timerState, now)
+            binding.tvFocusToolLabel.text = "Focus ${FocusTimerEngine.formatMmSs(rem)}"
+            binding.btnFocusTimerTool.background = ThemeManager.tintedTagDrawable(this, palette, palette.accent)
+        } else if (timerState.isStopwatchRunning) {
+            val elapsed = FocusTimerEngine.elapsedStopwatchMillis(timerState, now)
+            binding.tvFocusToolLabel.text = "SW ${FocusTimerEngine.formatMmSs(elapsed)}"
+            binding.btnFocusTimerTool.background = ThemeManager.tintedTagDrawable(this, palette, palette.accent)
+        } else {
+            binding.tvFocusToolLabel.text = getString(R.string.quick_focus_label)
+            binding.btnFocusTimerTool.background = ThemeManager.pillDrawable(this, palette)
+        }
     }
 
     private fun stylePulseScopeButtons(palette: ThemeManager.ThemePalette) {

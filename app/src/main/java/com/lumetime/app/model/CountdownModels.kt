@@ -47,7 +47,9 @@ data class CountdownItem(
     val isPinned: Boolean = false,
     val emoji: String = CountdownIcon.forCategory(category).id,
     val reminderEnabled: Boolean = false,
-    val note: String = ""
+    val note: String = "",
+    val checkInCount: Int = 0,
+    val lastCheckInDayKey: String = ""
 ) {
     fun resolveIcon(): CountdownIcon = CountdownIcon.fromStored(emoji, category)
 }

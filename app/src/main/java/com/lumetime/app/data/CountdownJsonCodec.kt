@@ -30,6 +30,8 @@ object CountdownJsonCodec {
                 put("emoji", item.emoji)
                 put("reminderEnabled", item.reminderEnabled)
                 put("note", item.note)
+                put("checkInCount", item.checkInCount)
+                put("lastCheckInDayKey", item.lastCheckInDayKey)
             }
             array.put(obj)
         }
@@ -68,7 +70,9 @@ object CountdownJsonCodec {
                         category
                     ).id,
                     reminderEnabled = obj.optBoolean("reminderEnabled", false),
-                    note = obj.optString("note", "").trim()
+                    note = obj.optString("note", "").trim(),
+                    checkInCount = obj.optInt("checkInCount", 0).coerceAtLeast(0),
+                    lastCheckInDayKey = obj.optString("lastCheckInDayKey", "").trim()
                 )
             )
         }
