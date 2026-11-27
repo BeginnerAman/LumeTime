@@ -27,13 +27,10 @@ import java.util.Locale
 object WidgetStudioDialog {
 
     fun show(context: Context, palette: ThemeManager.ThemePalette) {
-        val dialog = Dialog(context, R.style.Theme_LumeTime_GlassDialog)
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        val dialog = GlassSheetHelper.createBottomSheet(context)
         val binding = DialogWidgetStudioBinding.inflate(LayoutInflater.from(context))
         dialog.setContentView(binding.root)
-
-        val width = (context.resources.displayMetrics.widthPixels * 0.92f).toInt()
-        dialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
+        GlassSheetHelper.configureBottomWindow(dialog, context)
 
         var selectedStyle = WidgetPrefs.getGlassStyle(context)
         var selectedOpacity = WidgetPrefs.getOpacity(context)
@@ -42,6 +39,7 @@ object WidgetStudioDialog {
         val yearProgress = TimeCalculator.computeYearProgress(System.currentTimeMillis())
 
         fun renderStudio() {
+            binding.sheetDragHandle.background = ThemeManager.dragHandleDrawable(context, palette)
             binding.widgetStudioRoot.background = ThemeManager.sheetDrawable(context, palette)
             binding.tvStudioTitle.setTextColor(palette.textPrimary)
             binding.tvStudioSubtitle.setTextColor(palette.textSecondary)

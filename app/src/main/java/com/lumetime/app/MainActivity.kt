@@ -520,7 +520,7 @@ class MainActivity : AppCompatActivity() {
         binding.tvEmptyTitle.setTextColor(palette.textPrimary)
         binding.tvEmptyDesc.setTextColor(palette.textSecondary)
 
-        binding.undoBanner.background = ThemeManager.sheetDrawable(this, palette)
+        binding.undoBanner.background = ThemeManager.cardDrawable(this, palette, isHero = true)
         binding.tvUndoMessage.setTextColor(palette.textPrimary)
         binding.btnUndoDelete.setTextColor(palette.accent)
         binding.fabAddCountdown.background = ThemeManager.fabDrawable(this, palette)

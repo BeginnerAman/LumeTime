@@ -21,14 +21,12 @@ object BackupDialog {
         onExportClick: () -> Unit,
         onRestoreClick: () -> Unit
     ) {
-        val dialog = Dialog(context, R.style.Theme_LumeTime_GlassDialog)
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        val dialog = GlassSheetHelper.createBottomSheet(context)
         val binding = DialogGlassBackupBinding.inflate(LayoutInflater.from(context))
         dialog.setContentView(binding.root)
+        GlassSheetHelper.configureBottomWindow(dialog, context)
 
-        val width = (context.resources.displayMetrics.widthPixels * 0.90f).toInt()
-        dialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
-
+        binding.sheetDragHandle.background = ThemeManager.dragHandleDrawable(context, palette)
         binding.backupSheetRoot.background = ThemeManager.sheetDrawable(context, palette)
         binding.tvBackupTitle.setTextColor(palette.textPrimary)
         binding.tvBackupSubtitle.setTextColor(palette.textSecondary)

@@ -20,19 +20,17 @@ object ThemePickerDialog {
         context: Context,
         onSelectionChanged: (ThemeManager.AppTheme, ThemeManager.AppearanceMode) -> Unit
     ) {
-        val dialog = Dialog(context, R.style.Theme_LumeTime_GlassDialog)
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        val dialog = GlassSheetHelper.createBottomSheet(context)
         val binding = DialogGlassThemeBinding.inflate(LayoutInflater.from(context))
         dialog.setContentView(binding.root)
-
-        val width = (context.resources.displayMetrics.widthPixels * 0.90f).toInt()
-        dialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
+        GlassSheetHelper.configureBottomWindow(dialog, context)
 
         var selectedTheme = ThemeManager.getSavedTheme(context)
         var selectedMode = ThemeManager.getSavedAppearance(context)
 
         fun renderDialog() {
             val palette = ThemeManager.getPalette(context, selectedTheme, selectedMode)
+            binding.sheetDragHandle.background = ThemeManager.dragHandleDrawable(context, palette)
             binding.themeSheetRoot.background = ThemeManager.sheetDrawable(context, palette)
             binding.tvThemeTitle.setTextColor(palette.textPrimary)
             binding.tvThemeSubtitle.setTextColor(palette.textSecondary)

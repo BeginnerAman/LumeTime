@@ -71,13 +71,10 @@ object CountdownEditorDialog {
         onDelete: ((CountdownItem) -> Unit)? = null,
         onRequestNotificationPermission: (() -> Unit)? = null
     ) {
-        val dialog = Dialog(context, R.style.Theme_LumeTime_GlassDialog)
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        val dialog = GlassSheetHelper.createBottomSheet(context)
         val binding = DialogCountdownEditorBinding.inflate(LayoutInflater.from(context))
         dialog.setContentView(binding.root)
-
-        val width = (context.resources.displayMetrics.widthPixels * 0.92f).toInt()
-        dialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
+        GlassSheetHelper.configureBottomWindow(dialog, context)
 
         val now = System.currentTimeMillis()
         val initialTarget = existing?.targetEpochMillis ?: (now + 7L * TimeCalculator.MILLIS_PER_DAY)
@@ -123,6 +120,7 @@ object CountdownEditorDialog {
         )
 
         fun renderEditor() {
+            binding.sheetDragHandle.background = ThemeManager.dragHandleDrawable(context, palette)
             binding.editorSheetRoot.background = ThemeManager.sheetDrawable(context, palette)
             binding.tvEditorTitle.setTextColor(palette.textPrimary)
             binding.tvTemplatesLabel.setTextColor(palette.textSecondary)

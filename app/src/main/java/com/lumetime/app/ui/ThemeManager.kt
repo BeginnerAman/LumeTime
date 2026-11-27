@@ -9,6 +9,7 @@ import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.RippleDrawable
 import android.os.Build
 import android.view.HapticFeedbackConstants
@@ -257,12 +258,12 @@ object ThemeManager {
                 bgTop = theme.darkBgTop,
                 bgMid = theme.darkBgMid,
                 bgBottom = theme.darkBgBottom,
-                glassSurface = 0xA8161E34.toInt(),
-                glassHeroSurface = 0xBD19233D.toInt(),
-                glassSurfaceStrong = 0xEA182038.toInt(),
-                glassPill = 0x99232E4D.toInt(),
-                glassStroke = 0x33FFFFFF,
-                glassHeroStroke = 0x4DFFFFFF,
+                glassSurface = 0x6E121B33.toInt(),
+                glassHeroSurface = 0x7E15203C.toInt(),
+                glassSurfaceStrong = 0xEE11192E.toInt(),
+                glassPill = 0x731C2847.toInt(),
+                glassStroke = 0x45FFFFFF,
+                glassHeroStroke = 0x66FFFFFF,
                 textPrimary = 0xFFF8FAFC.toInt(),
                 textSecondary = 0xFFB8C4D9.toInt(),
                 textTertiary = 0xFF7D8CA8.toInt(),
@@ -281,12 +282,12 @@ object ThemeManager {
                 bgTop = theme.lightBgTop,
                 bgMid = theme.lightBgMid,
                 bgBottom = theme.lightBgBottom,
-                glassSurface = 0xC9FFFFFF.toInt(),
-                glassHeroSurface = 0xDEFFFFFF.toInt(),
-                glassSurfaceStrong = 0xF2FFFFFF.toInt(),
-                glassPill = 0xB8FFFFFF.toInt(),
-                glassStroke = 0xB8FFFFFF.toInt(),
-                glassHeroStroke = 0xE6FFFFFF.toInt(),
+                glassSurface = 0x9EFFFFFF.toInt(),
+                glassHeroSurface = 0xB5FFFFFF.toInt(),
+                glassSurfaceStrong = 0xF5FFFFFF.toInt(),
+                glassPill = 0x9EFFFFFF.toInt(),
+                glassStroke = 0xCCFFFFFF.toInt(),
+                glassHeroStroke = 0xF0FFFFFF.toInt(),
                 textPrimary = 0xFF0F172A.toInt(),
                 textSecondary = 0xFF475569.toInt(),
                 textTertiary = 0xFF8392A8.toInt(),
@@ -363,28 +364,56 @@ object ThemeManager {
     fun withAlpha(color: Int, alpha: Int): Int =
         Color.argb(alpha.coerceIn(0, 255), Color.red(color), Color.green(color), Color.blue(color))
 
+    private fun buildSpecularGlassLayer(
+        context: Context,
+        fillColor: Int,
+        strokeColor: Int,
+        isDark: Boolean,
+        cornerRadii: FloatArray
+    ): LayerDrawable {
+        val base = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            this.cornerRadii = cornerRadii
+            setColor(fillColor)
+        }
+        val sheenColors = if (isDark) {
+            intArrayOf(0x2EFFFFFF, 0x0DFFFFFF, 0x02FFFFFF)
+        } else {
+            intArrayOf(0x78FFFFFF, 0x24FFFFFF, 0x08FFFFFF)
+        }
+        val sheen = GradientDrawable(GradientDrawable.Orientation.TL_BR, sheenColors).apply {
+            shape = GradientDrawable.RECTANGLE
+            this.cornerRadii = cornerRadii
+        }
+        val rim = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            this.cornerRadii = cornerRadii
+            setColor(Color.TRANSPARENT)
+            setStroke(dp(context, 1f).toInt().coerceAtLeast(1), strokeColor)
+        }
+        return LayerDrawable(arrayOf(base, sheen, rim))
+    }
+
     fun cardDrawable(context: Context, palette: ThemePalette, isHero: Boolean = false): Drawable {
         val radius = dp(context, if (isHero) 26f else 22f)
+        val radii = FloatArray(8) { radius }
         val fill = if (isHero) palette.glassHeroSurface else palette.glassSurface
         val stroke = if (isHero) palette.glassHeroStroke else palette.glassStroke
-        val content = GradientDrawable().apply {
-            shape = GradientDrawable.RECTANGLE
-            cornerRadius = radius
-            setColor(fill)
-            setStroke(dp(context, 1f).toInt().coerceAtLeast(1), stroke)
-        }
-        return RippleDrawable(ColorStateList.valueOf(palette.accentSoft), content, roundMask(radius))
+        val layer = buildSpecularGlassLayer(context, fill, stroke, palette.isDark, radii)
+        return RippleDrawable(ColorStateList.valueOf(palette.accentSoft), layer, roundMask(radius))
     }
 
     fun pillDrawable(context: Context, palette: ThemePalette): Drawable {
         val radius = dp(context, 999f)
-        val content = GradientDrawable().apply {
-            shape = GradientDrawable.RECTANGLE
-            cornerRadius = radius
-            setColor(palette.glassPill)
-            setStroke(dp(context, 1f).toInt().coerceAtLeast(1), palette.glassStroke)
-        }
-        return RippleDrawable(ColorStateList.valueOf(palette.accentSoft), content, roundMask(radius))
+        val radii = FloatArray(8) { radius }
+        val layer = buildSpecularGlassLayer(
+            context,
+            palette.glassPill,
+            palette.glassStroke,
+            palette.isDark,
+            radii
+        )
+        return RippleDrawable(ColorStateList.valueOf(palette.accentSoft), layer, roundMask(radius))
     }
 
     fun tagDrawable(context: Context, palette: ThemePalette): Drawable {
@@ -416,17 +445,28 @@ object ThemeManager {
         ).apply {
             shape = GradientDrawable.RECTANGLE
             cornerRadius = radius
-            setStroke(dp(context, 1f).toInt().coerceAtLeast(1), 0x66FFFFFF)
+            setStroke(dp(context, 1f).toInt().coerceAtLeast(1), 0x77FFFFFF)
         }
         return RippleDrawable(ColorStateList.valueOf(0x40FFFFFF), content, roundMask(radius))
     }
 
     fun sheetDrawable(context: Context, palette: ThemePalette): Drawable {
+        val r = dp(context, 30f)
+        val topRadii = floatArrayOf(r, r, r, r, 0f, 0f, 0f, 0f)
+        return buildSpecularGlassLayer(
+            context,
+            palette.glassSurfaceStrong,
+            palette.glassHeroStroke,
+            palette.isDark,
+            topRadii
+        )
+    }
+
+    fun dragHandleDrawable(context: Context, palette: ThemePalette): Drawable {
         return GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
-            cornerRadius = dp(context, 28f)
-            setColor(palette.glassSurfaceStrong)
-            setStroke(dp(context, 1f).toInt().coerceAtLeast(1), palette.glassHeroStroke)
+            cornerRadius = dp(context, 999f)
+            setColor(withAlpha(palette.textTertiary, 0x88))
         }
     }
 
