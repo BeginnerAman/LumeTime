@@ -1,14 +1,26 @@
 package com.lumetime.app
 
+import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.View
+import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.lumetime.app.core.TimeCalculator
+import com.lumetime.app.data.CountdownFilter
+import com.lumetime.app.data.CountdownSortMode
+import com.lumetime.app.data.CountdownStore
 import com.lumetime.app.databinding.ActivityMainBinding
+import com.lumetime.app.model.CountdownCategory
+import com.lumetime.app.model.CountdownItem
+import com.lumetime.app.ui.CountdownAdapter
+import com.lumetime.app.ui.CountdownEditorDialog
+import com.lumetime.app.ui.FilterChipAdapter
 import com.lumetime.app.ui.ThemeManager
 import com.lumetime.app.ui.ThemePickerDialog
 import com.lumetime.app.ui.YearDisplayFormatter
@@ -20,22 +32,45 @@ import java.util.Locale
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private lateinit var store: CountdownStore
+    private lateinit var countdownAdapter: CountdownAdapter
+    private lateinit var filterChipAdapter: FilterChipAdapter
+
     private val mainHandler = Handler(Looper.getMainLooper())
     private val headerDateFormat = SimpleDateFormat("EEE, MMM d • yyyy", Locale.getDefault())
+    private val heroMetaDateFormat = SimpleDateFormat("EEE, MMM d, yyyy • h:mm a", Locale.getDefault())
 
+    private var allItems: List<CountdownItem> = emptyList()
+    private var heroItem: CountdownItem? = null
+    private var activeFilter: CountdownFilter = CountdownFilter.All
+    private var sortMode: CountdownSortMode = CountdownSortMode.SOONEST
+    private var showTotalHoursMode: Boolean = false
     private var metricMode: YearPulseMetricMode = YearPulseMetricMode.DAYS_LEFT
-    private var lastBasePaddingTop: Int = 0
-    private var lastBasePaddingBottom: Int = 0
-    private var lastBasePaddingLeft: Int = 0
-    private var lastBasePaddingRight: Int = 0
+    private var recentlyDeletedItem: CountdownItem? = null
+    private var lastHeroId: String? = null
+
+    private var basePadLeft = 0
+    private var basePadTop = 0
+    private var basePadRight = 0
+    private var basePadBottom = 0
+    private var baseFabMarginBottom = 0
+    private var baseFabMarginEnd = 0
 
     private val tickRunnable = object : Runnable {
         override fun run() {
-            updateYearPulse()
             val now = System.currentTimeMillis()
+            updateYearPulse(now)
+            updateHeroCountdown(now, animateRoll = true)
+            countdownAdapter.refreshTick(now)
+
             val delayToNextSecond = 1000L - (now % 1000L)
             mainHandler.postDelayed(this, delayToNextSecond.coerceAtLeast(150L))
         }
+    }
+
+    private val hideUndoRunnable = Runnable {
+        binding.undoBanner.visibility = View.GONE
+        recentlyDeletedItem = null
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,17 +79,24 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         if (savedInstanceState != null) {
-            val savedOrdinal = savedInstanceState.getInt(KEY_METRIC_MODE, 0)
-            metricMode = YearPulseMetricMode.entries.getOrElse(savedOrdinal) {
+            val savedMetric = savedInstanceState.getInt(KEY_METRIC_MODE, 0)
+            metricMode = YearPulseMetricMode.entries.getOrElse(savedMetric) {
                 YearPulseMetricMode.DAYS_LEFT
             }
+            val savedSort = savedInstanceState.getInt(KEY_SORT_MODE, 0)
+            sortMode = CountdownSortMode.entries.getOrElse(savedSort) {
+                CountdownSortMode.SOONEST
+            }
+            showTotalHoursMode = savedInstanceState.getBoolean(KEY_HOURS_MODE, false)
         }
 
-        captureBasePadding()
+        store = CountdownStore.create(this)
+        captureBaseDimensions()
         setupInsets()
+        setupLists()
         setupInteractions()
+        reloadCountdowns(animateHeroRoll = false)
         applyTheme(animate = false)
-        updateYearPulse()
     }
 
     override fun onStart() {
@@ -67,6 +109,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStop() {
         mainHandler.removeCallbacks(tickRunnable)
+        mainHandler.removeCallbacks(hideUndoRunnable)
         binding.ambientGlowView.stopBreathing()
         binding.yearDotMatrix.stopPulse()
         super.onStop()
@@ -75,26 +118,69 @@ class MainActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(KEY_METRIC_MODE, metricMode.ordinal)
+        outState.putInt(KEY_SORT_MODE, sortMode.ordinal)
+        outState.putBoolean(KEY_HOURS_MODE, showTotalHoursMode)
     }
 
-    private fun captureBasePadding() {
-        lastBasePaddingLeft = binding.contentColumn.paddingLeft
-        lastBasePaddingTop = binding.contentColumn.paddingTop
-        lastBasePaddingRight = binding.contentColumn.paddingRight
-        lastBasePaddingBottom = binding.contentColumn.paddingBottom
+    private fun captureBaseDimensions() {
+        basePadLeft = binding.contentColumn.paddingLeft
+        basePadTop = binding.contentColumn.paddingTop
+        basePadRight = binding.contentColumn.paddingRight
+        basePadBottom = binding.contentColumn.paddingBottom
+        val fabParams = binding.fabAddCountdown.layoutParams as ViewGroup.MarginLayoutParams
+        baseFabMarginBottom = fabParams.bottomMargin
+        baseFabMarginEnd = fabParams.marginEnd
     }
 
     private fun setupInsets() {
-        ViewCompat.setOnApplyWindowInsetsListener(binding.contentColumn) { view, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(binding.rootContainer) { _, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.setPadding(
-                lastBasePaddingLeft + bars.left,
-                lastBasePaddingTop + bars.top,
-                lastBasePaddingRight + bars.right,
-                lastBasePaddingBottom + bars.bottom
+            binding.contentColumn.setPadding(
+                basePadLeft + bars.left,
+                basePadTop + bars.top,
+                basePadRight + bars.right,
+                basePadBottom + bars.bottom
             )
+            (binding.fabAddCountdown.layoutParams as ViewGroup.MarginLayoutParams).apply {
+                bottomMargin = baseFabMarginBottom + bars.bottom
+                marginEnd = baseFabMarginEnd + bars.right
+            }.also { binding.fabAddCountdown.layoutParams = it }
+
+            (binding.undoBanner.layoutParams as ViewGroup.MarginLayoutParams).apply {
+                bottomMargin = baseFabMarginBottom + bars.bottom
+                marginStart = baseFabMarginEnd + bars.left
+            }.also { binding.undoBanner.layoutParams = it }
             insets
         }
+    }
+
+    private fun setupLists() {
+        val filters = buildList {
+            add(CountdownFilter.All)
+            add(CountdownFilter.CountUp)
+            CountdownCategory.entries.forEach { add(CountdownFilter.Category(it)) }
+        }
+        filterChipAdapter = FilterChipAdapter(filters) { selected ->
+            activeFilter = selected
+            val pal = ThemeManager.getPalette(this)
+            filterChipAdapter.setState(activeFilter, pal)
+            refreshListOnly()
+        }
+        binding.rvFilterChips.layoutManager =
+            LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        binding.rvFilterChips.adapter = filterChipAdapter
+
+        countdownAdapter = CountdownAdapter(
+            onCardClick = { item -> openEditor(item) },
+            onPinClick = { item ->
+                allItems = store.togglePin(item.id)
+                reloadCountdowns(animateHeroRoll = false)
+            }
+        )
+        countdownAdapter.setShowTotalHours(showTotalHoursMode)
+        binding.rvCountdowns.layoutManager = LinearLayoutManager(this)
+        binding.rvCountdowns.adapter = countdownAdapter
+        binding.rvCountdowns.itemAnimator = null
     }
 
     private fun setupInteractions() {
@@ -109,8 +195,91 @@ class MainActivity : AppCompatActivity() {
             ThemeManager.performSoftTick(view)
             metricMode = metricMode.next()
             animateMetricSwitch()
-            updateYearPulse()
+            updateYearPulse(System.currentTimeMillis())
         }
+
+        binding.cardHeroCountdown.setOnClickListener { view ->
+            val currentHero = heroItem ?: return@setOnClickListener
+            ThemeManager.performTapHaptic(view)
+            openEditor(currentHero)
+        }
+
+        binding.btnToggleHours.setOnClickListener { view ->
+            ThemeManager.performSoftTick(view)
+            showTotalHoursMode = !showTotalHoursMode
+            countdownAdapter.setShowTotalHours(showTotalHoursMode)
+            updateToolbarLabels()
+        }
+
+        binding.btnSortMode.setOnClickListener { view ->
+            ThemeManager.performSoftTick(view)
+            sortMode = sortMode.next()
+            updateToolbarLabels()
+            refreshListOnly()
+        }
+
+        binding.fabAddCountdown.setOnClickListener { view ->
+            ThemeManager.performTapHaptic(view)
+            openEditor(null)
+        }
+
+        binding.btnUndoDelete.setOnClickListener { view ->
+            val restore = recentlyDeletedItem ?: return@setOnClickListener
+            ThemeManager.performTapHaptic(view)
+            mainHandler.removeCallbacks(hideUndoRunnable)
+            binding.undoBanner.visibility = View.GONE
+            recentlyDeletedItem = null
+            allItems = store.upsert(restore)
+            reloadCountdowns(animateHeroRoll = false)
+        }
+    }
+
+    private fun openEditor(existing: CountdownItem?) {
+        val palette = ThemeManager.getPalette(this)
+        CountdownEditorDialog.show(
+            context = this,
+            palette = palette,
+            existing = existing,
+            onSave = { saved ->
+                allItems = store.upsert(saved)
+                reloadCountdowns(animateHeroRoll = false)
+            },
+            onDelete = { deleted ->
+                store.delete(deleted.id)
+                allItems = store.loadAll()
+                recentlyDeletedItem = deleted
+                showUndoBanner(deleted.title)
+                reloadCountdowns(animateHeroRoll = false)
+            }
+        )
+    }
+
+    private fun showUndoBanner(title: String) {
+        mainHandler.removeCallbacks(hideUndoRunnable)
+        binding.tvUndoMessage.text = "\"$title\" ${getString(R.string.deleted_banner_suffix)}"
+        binding.undoBanner.visibility = View.VISIBLE
+        mainHandler.postDelayed(hideUndoRunnable, 4_500L)
+    }
+
+    private fun reloadCountdowns(animateHeroRoll: Boolean) {
+        val now = System.currentTimeMillis()
+        allItems = store.loadAll(now)
+        heroItem = CountdownStore.selectHeroItem(allItems, now)
+        updateHeroCountdown(now, animateRoll = animateHeroRoll)
+        refreshListOnly(now)
+        updateToolbarLabels()
+    }
+
+    private fun refreshListOnly(now: Long = System.currentTimeMillis()) {
+        val filtered = CountdownStore.filterAndSort(allItems, activeFilter, sortMode, now)
+        countdownAdapter.submitList(filtered)
+        binding.cardEmptyState.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
+        binding.rvCountdowns.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
+    }
+
+    private fun updateToolbarLabels() {
+        binding.tvHoursModeLabel.text = if (showTotalHoursMode) "Hours" else "Days"
+        binding.tvSortModeLabel.text = sortMode.label
     }
 
     private fun animateMetricSwitch() {
@@ -146,6 +315,7 @@ class MainActivity : AppCompatActivity() {
         binding.ivPaletteIcon.setColorFilter(palette.accent)
         binding.tvThemeButtonLabel.setTextColor(palette.textPrimary)
 
+        // Year Pulse Card
         binding.cardYearPulse.background = ThemeManager.cardDrawable(this, palette, isHero = true)
         binding.tvYearPulseTitle.setTextColor(palette.accent)
         binding.tvDayOfYearBadge.background = ThemeManager.tagDrawable(this, palette)
@@ -157,14 +327,60 @@ class MainActivity : AppCompatActivity() {
         binding.ivSwapHint.setColorFilter(palette.textTertiary)
         binding.tvTapToCycle.setTextColor(palette.textTertiary)
 
-        binding.cardUpcomingCountdowns.background = ThemeManager.cardDrawable(this, palette)
-        binding.ivSparkleHint.setColorFilter(palette.accent)
-        binding.tvUpcomingTitle.setTextColor(palette.textPrimary)
-        binding.tvUpcomingDesc.setTextColor(palette.textSecondary)
+        // Hero Countdown Card
+        binding.cardHeroCountdown.background = ThemeManager.cardDrawable(this, palette, isHero = true)
+        binding.tvHeroBadge.setTextColor(palette.accent)
+        binding.tvHeroHoursBadge.background = ThemeManager.tagDrawable(this, palette)
+        binding.tvHeroHoursBadge.setTextColor(palette.accent)
+        binding.tvHeroTitle.setTextColor(palette.textPrimary)
+        binding.tvHeroMeta.setTextColor(palette.textSecondary)
+
+        val digitTextSizeSp = if (resources.configuration.orientation ==
+            android.content.res.Configuration.ORIENTATION_LANDSCAPE
+        ) 20f else 24f
+        listOf(
+            binding.rollingDays,
+            binding.rollingHours,
+            binding.rollingMinutes,
+            binding.rollingSeconds
+        ).forEach { roller ->
+            roller.setStyle(
+                bg = palette.glassPill,
+                stroke = palette.glassStroke,
+                text = palette.textPrimary,
+                textSizeSp = digitTextSizeSp
+            )
+        }
+        listOf(binding.tvUnitDays, binding.tvUnitHrs, binding.tvUnitMin, binding.tvUnitSec)
+            .forEach { it.setTextColor(palette.textTertiary) }
+
+        // Toolbar & Adapters
+        binding.tvSectionCountdowns.setTextColor(palette.textPrimary)
+        binding.btnToggleHours.background = ThemeManager.pillDrawable(this, palette)
+        binding.ivHoursIcon.setColorFilter(palette.accent)
+        binding.tvHoursModeLabel.setTextColor(palette.textPrimary)
+        binding.btnSortMode.background = ThemeManager.pillDrawable(this, palette)
+        binding.ivSortIcon.setColorFilter(palette.accent)
+        binding.tvSortModeLabel.setTextColor(palette.textPrimary)
+
+        filterChipAdapter.setState(activeFilter, palette)
+        countdownAdapter.setThemePalette(palette)
+
+        // Empty State, Undo, FAB
+        binding.cardEmptyState.background = ThemeManager.cardDrawable(this, palette)
+        binding.ivEmptySparkle.setColorFilter(palette.accent)
+        binding.tvEmptyTitle.setTextColor(palette.textPrimary)
+        binding.tvEmptyDesc.setTextColor(palette.textSecondary)
+
+        binding.undoBanner.background = ThemeManager.sheetDrawable(this, palette)
+        binding.tvUndoMessage.setTextColor(palette.textPrimary)
+        binding.btnUndoDelete.setTextColor(palette.accent)
+        binding.fabAddCountdown.background = ThemeManager.fabDrawable(this, palette)
+
+        updateHeroCountdown(System.currentTimeMillis(), animateRoll = false)
     }
 
-    private fun updateYearPulse() {
-        val now = System.currentTimeMillis()
+    private fun updateYearPulse(now: Long) {
         val yearProgress = TimeCalculator.computeYearProgress(now)
         val display = YearDisplayFormatter.format(yearProgress, metricMode, now)
 
@@ -185,7 +401,79 @@ class MainActivity : AppCompatActivity() {
         binding.yearProgressBar.setProgress(yearProgress.progressFraction)
     }
 
+    private fun updateHeroCountdown(now: Long, animateRoll: Boolean) {
+        val item = heroItem
+        if (item == null) {
+            binding.cardHeroCountdown.visibility = View.GONE
+            lastHeroId = null
+            return
+        }
+        binding.cardHeroCountdown.visibility = View.VISIBLE
+
+        val sameHero = item.id == lastHeroId
+        lastHeroId = item.id
+        val shouldAnimate = animateRoll && sameHero
+
+        val palette = ThemeManager.getPalette(this)
+        val breakdown = TimeCalculator.calculateBreakdown(item, now)
+        val itemAccent = runCatching { Color.parseColor(item.accentHex) }.getOrDefault(palette.accent)
+
+        binding.tvHeroBadge.text = when {
+            breakdown.isCountUp -> "MILESTONE FOCUS"
+            item.isPinned -> getString(R.string.pinned_hero_label)
+            else -> "UP NEXT"
+        }
+        binding.tvHeroEmoji.text = item.emoji
+        binding.tvHeroTitle.text = item.title
+
+        binding.rollingDays.setValue(
+            String.format(Locale.US, "%02d", breakdown.days),
+            animate = shouldAnimate
+        )
+        binding.rollingHours.setValue(
+            String.format(Locale.US, "%02d", breakdown.hours),
+            animate = shouldAnimate
+        )
+        binding.rollingMinutes.setValue(
+            String.format(Locale.US, "%02d", breakdown.minutes),
+            animate = shouldAnimate
+        )
+        binding.rollingSeconds.setValue(
+            String.format(Locale.US, "%02d", breakdown.seconds),
+            animate = shouldAnimate
+        )
+
+        binding.tvHeroHoursBadge.text = when {
+            breakdown.isExpired -> "Reached"
+            breakdown.isCountUp -> String.format(Locale.US, "+%,d hrs", breakdown.totalHours)
+            else -> String.format(Locale.US, "%,d hrs left", breakdown.totalHours)
+        }
+
+        if (breakdown.isCountUp) {
+            binding.heroProgressBar.visibility = View.GONE
+            binding.tvHeroMeta.text =
+                "Started ${heroMetaDateFormat.format(Date(breakdown.effectiveTargetMillis))}"
+        } else {
+            binding.heroProgressBar.visibility = View.VISIBLE
+            binding.heroProgressBar.setColors(
+                track = palette.progressTrack,
+                accentStart = ThemeManager.withAlpha(itemAccent, 0xCC),
+                accentEnd = itemAccent
+            )
+            binding.heroProgressBar.setProgress(breakdown.progress)
+            val pct = (breakdown.progress * 100f)
+            binding.tvHeroMeta.text = String.format(
+                Locale.US,
+                "%s • %.0f%% elapsed",
+                heroMetaDateFormat.format(Date(breakdown.effectiveTargetMillis)),
+                pct
+            )
+        }
+    }
+
     companion object {
         private const val KEY_METRIC_MODE = "metric_mode"
+        private const val KEY_SORT_MODE = "sort_mode"
+        private const val KEY_HOURS_MODE = "hours_mode"
     }
 }
