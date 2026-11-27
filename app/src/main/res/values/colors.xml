@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg_base">#0A0F1E</color>
+    <color name="text_primary">#F8FAFC</color>
+    <color name="text_secondary">#B8C4D9</color>
+    <color name="accent_cyan">#67E8F9</color>
+</resources>

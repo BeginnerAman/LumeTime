@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Outer frosted glass orbital ring -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#D9FFFFFF"
+        android:strokeWidth="4.5"
+        android:pathData="M54,26 A28,28 0 1,1 53.99,26 Z" />
+    <!-- Luminous progress arc -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF67E8F9"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:pathData="M54,26 A28,28 0 1,1 28.1,64.8" />
+    <!-- Clock hands inside glass -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M54,39 L54,54 L65,60" />
+    <!-- Center luminous pivot -->
+    <path
+        android:fillColor="#FF67E8F9"
+        android:pathData="M54,51 A3,3 0 1,1 53.99,51 Z" />
+    <!-- Top-right 4-point Lume sparkle -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M79,21 L80.5,25.5 L85,27 L80.5,28.5 L79,33 L77.5,28.5 L73,27 L77.5,25.5 Z" />
+</vector>
