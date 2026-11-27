@@ -40,6 +40,7 @@ object ThemePickerDialog {
             val modeButtons = listOf(
                 binding.btnModeAuto to ThemeManager.AppearanceMode.AUTO,
                 binding.btnModeDark to ThemeManager.AppearanceMode.DARK,
+                binding.btnModeAmoled to ThemeManager.AppearanceMode.AMOLED,
                 binding.btnModeLight to ThemeManager.AppearanceMode.LIGHT
             )
             modeButtons.forEach { (btn, mode) ->

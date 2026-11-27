@@ -41,6 +41,36 @@
                 android:layout_weight="1" />
 
             <LinearLayout
+                android:id="@+id/btnFocusPureBlack"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:layout_marginEnd="8dp"
+                android:clickable="true"
+                android:contentDescription="@string/pure_black_desc"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingHorizontal="10dp">
+
+                <ImageView
+                    android:id="@+id/ivFocusPureBlackIcon"
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_amoled_moon" />
+
+                <TextView
+                    android:id="@+id/tvFocusPureBlackLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="@string/pure_black_label"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
                 android:id="@+id/btnKeepAwake"
                 android:layout_width="wrap_content"
                 android:layout_height="38dp"

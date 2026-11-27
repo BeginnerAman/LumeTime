@@ -26,10 +26,12 @@ object ThemeManager {
     private const val PREFS_NAME = "lumetime_prefs"
     private const val KEY_THEME_ID = "selected_theme_id"
     private const val KEY_APPEARANCE = "appearance_mode"
+    private const val KEY_DESK_AMOLED = "desk_amoled_mode"
 
     enum class AppearanceMode(val id: String) {
         AUTO("auto"),
         DARK("dark"),
+        AMOLED("amoled"),
         LIGHT("light");
 
         companion object {
@@ -181,6 +183,7 @@ object ThemeManager {
     data class ThemePalette(
         val theme: AppTheme,
         val isDark: Boolean,
+        val isPureBlack: Boolean = false,
         val bgTop: Int,
         val bgMid: Int,
         val bgBottom: Int,
@@ -229,9 +232,35 @@ object ThemeManager {
             .apply()
     }
 
+    fun isDeskAmoledEnabled(context: Context): Boolean =
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getBoolean(KEY_DESK_AMOLED, false)
+
+    fun setDeskAmoledEnabled(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_DESK_AMOLED, enabled)
+            .apply()
+    }
+
+    fun resolvePureBlackForClock(context: Context): Boolean =
+        getSavedAppearance(context) == AppearanceMode.AMOLED || isDeskAmoledEnabled(context)
+
+    fun togglePureBlackForClock(context: Context): Boolean {
+        return if (getSavedAppearance(context) == AppearanceMode.AMOLED) {
+            saveAppearance(context, AppearanceMode.DARK)
+            setDeskAmoledEnabled(context, false)
+            false
+        } else {
+            val next = !isDeskAmoledEnabled(context)
+            setDeskAmoledEnabled(context, next)
+            next
+        }
+    }
+
     fun isDarkActive(context: Context, mode: AppearanceMode = getSavedAppearance(context)): Boolean {
         return when (mode) {
-            AppearanceMode.DARK -> true
+            AppearanceMode.DARK, AppearanceMode.AMOLED -> true
             AppearanceMode.LIGHT -> false
             AppearanceMode.AUTO -> {
                 val uiMode =
@@ -244,61 +273,96 @@ object ThemeManager {
     fun getPalette(
         context: Context,
         theme: AppTheme = getSavedTheme(context),
-        appearance: AppearanceMode = getSavedAppearance(context)
+        appearance: AppearanceMode = getSavedAppearance(context),
+        forcePureBlack: Boolean = false
     ): ThemePalette {
-        val dark = isDarkActive(context, appearance)
+        val pureBlack = forcePureBlack || appearance == AppearanceMode.AMOLED
+        val dark = pureBlack || isDarkActive(context, appearance)
         val accent = if (dark) theme.darkAccent else theme.lightAccent
         val accentEnd = if (dark) theme.darkAccentEnd else theme.lightAccentEnd
-        val accentSoft = withAlpha(accent, if (dark) 0x36 else 0x22)
+        val accentSoft = withAlpha(accent, if (pureBlack) 0x26 else if (dark) 0x36 else 0x22)
 
-        return if (dark) {
-            ThemePalette(
-                theme = theme,
-                isDark = true,
-                bgTop = theme.darkBgTop,
-                bgMid = theme.darkBgMid,
-                bgBottom = theme.darkBgBottom,
-                glassSurface = 0x6E121B33.toInt(),
-                glassHeroSurface = 0x7E15203C.toInt(),
-                glassSurfaceStrong = 0xEE11192E.toInt(),
-                glassPill = 0x731C2847.toInt(),
-                glassStroke = 0x45FFFFFF,
-                glassHeroStroke = 0x66FFFFFF,
-                textPrimary = 0xFFF8FAFC.toInt(),
-                textSecondary = 0xFFB8C4D9.toInt(),
-                textTertiary = 0xFF7D8CA8.toInt(),
-                accent = accent,
-                accentEnd = accentEnd,
-                accentSoft = accentSoft,
-                dotFuture = 0x29FFFFFF,
-                progressTrack = 0x24FFFFFF,
-                warningAmber = 0xFFFBBF24.toInt(),
-                urgentCoral = 0xFFFB7185.toInt()
-            )
-        } else {
-            ThemePalette(
-                theme = theme,
-                isDark = false,
-                bgTop = theme.lightBgTop,
-                bgMid = theme.lightBgMid,
-                bgBottom = theme.lightBgBottom,
-                glassSurface = 0x9EFFFFFF.toInt(),
-                glassHeroSurface = 0xB5FFFFFF.toInt(),
-                glassSurfaceStrong = 0xF5FFFFFF.toInt(),
-                glassPill = 0x9EFFFFFF.toInt(),
-                glassStroke = 0xCCFFFFFF.toInt(),
-                glassHeroStroke = 0xF0FFFFFF.toInt(),
-                textPrimary = 0xFF0F172A.toInt(),
-                textSecondary = 0xFF475569.toInt(),
-                textTertiary = 0xFF8392A8.toInt(),
-                accent = accent,
-                accentEnd = accentEnd,
-                accentSoft = accentSoft,
-                dotFuture = 0x240F172A,
-                progressTrack = 0x1A0F172A,
-                warningAmber = 0xFFD97706.toInt(),
-                urgentCoral = 0xFFE11D48.toInt()
-            )
+        return when {
+            pureBlack -> {
+                ThemePalette(
+                    theme = theme,
+                    isDark = true,
+                    isPureBlack = true,
+                    bgTop = Color.BLACK,
+                    bgMid = Color.BLACK,
+                    bgBottom = Color.BLACK,
+                    glassSurface = Color.BLACK,
+                    glassHeroSurface = Color.BLACK,
+                    glassSurfaceStrong = 0xFF0A0A0A.toInt(),
+                    glassPill = Color.BLACK,
+                    glassStroke = 0x26FFFFFF,
+                    glassHeroStroke = 0x36FFFFFF,
+                    textPrimary = 0xFFEFF4FA.toInt(),
+                    textSecondary = 0xFF94A3B8.toInt(),
+                    textTertiary = 0xFF64748B.toInt(),
+                    accent = accent,
+                    accentEnd = accentEnd,
+                    accentSoft = accentSoft,
+                    dotFuture = 0x22FFFFFF,
+                    progressTrack = 0x1AFFFFFF,
+                    warningAmber = 0xFFFBBF24.toInt(),
+                    urgentCoral = 0xFFFB7185.toInt()
+                )
+            }
+
+            dark -> {
+                ThemePalette(
+                    theme = theme,
+                    isDark = true,
+                    isPureBlack = false,
+                    bgTop = theme.darkBgTop,
+                    bgMid = theme.darkBgMid,
+                    bgBottom = theme.darkBgBottom,
+                    glassSurface = 0x6E121B33.toInt(),
+                    glassHeroSurface = 0x7E15203C.toInt(),
+                    glassSurfaceStrong = 0xEE11192E.toInt(),
+                    glassPill = 0x731C2847.toInt(),
+                    glassStroke = 0x45FFFFFF,
+                    glassHeroStroke = 0x66FFFFFF,
+                    textPrimary = 0xFFF8FAFC.toInt(),
+                    textSecondary = 0xFFB8C4D9.toInt(),
+                    textTertiary = 0xFF7D8CA8.toInt(),
+                    accent = accent,
+                    accentEnd = accentEnd,
+                    accentSoft = accentSoft,
+                    dotFuture = 0x29FFFFFF,
+                    progressTrack = 0x24FFFFFF,
+                    warningAmber = 0xFFFBBF24.toInt(),
+                    urgentCoral = 0xFFFB7185.toInt()
+                )
+            }
+
+            else -> {
+                ThemePalette(
+                    theme = theme,
+                    isDark = false,
+                    isPureBlack = false,
+                    bgTop = theme.lightBgTop,
+                    bgMid = theme.lightBgMid,
+                    bgBottom = theme.lightBgBottom,
+                    glassSurface = 0x9EFFFFFF.toInt(),
+                    glassHeroSurface = 0xB5FFFFFF.toInt(),
+                    glassSurfaceStrong = 0xF5FFFFFF.toInt(),
+                    glassPill = 0x9EFFFFFF.toInt(),
+                    glassStroke = 0xCCFFFFFF.toInt(),
+                    glassHeroStroke = 0xF0FFFFFF.toInt(),
+                    textPrimary = 0xFF0F172A.toInt(),
+                    textSecondary = 0xFF475569.toInt(),
+                    textTertiary = 0xFF8392A8.toInt(),
+                    accent = accent,
+                    accentEnd = accentEnd,
+                    accentSoft = accentSoft,
+                    dotFuture = 0x240F172A,
+                    progressTrack = 0x1A0F172A,
+                    warningAmber = 0xFFD97706.toInt(),
+                    urgentCoral = 0xFFE11D48.toInt()
+                )
+            }
         }
     }
 
@@ -369,12 +433,22 @@ object ThemeManager {
         fillColor: Int,
         strokeColor: Int,
         isDark: Boolean,
-        cornerRadii: FloatArray
+        cornerRadii: FloatArray,
+        isPureBlack: Boolean = false
     ): LayerDrawable {
         val base = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
             this.cornerRadii = cornerRadii
             setColor(fillColor)
+        }
+        val rim = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            this.cornerRadii = cornerRadii
+            setColor(Color.TRANSPARENT)
+            setStroke(dp(context, 1f).toInt().coerceAtLeast(1), strokeColor)
+        }
+        if (isPureBlack) {
+            return LayerDrawable(arrayOf(base, rim))
         }
         val sheenColors = if (isDark) {
             intArrayOf(0x2EFFFFFF, 0x0DFFFFFF, 0x02FFFFFF)
@@ -385,12 +459,6 @@ object ThemeManager {
             shape = GradientDrawable.RECTANGLE
             this.cornerRadii = cornerRadii
         }
-        val rim = GradientDrawable().apply {
-            shape = GradientDrawable.RECTANGLE
-            this.cornerRadii = cornerRadii
-            setColor(Color.TRANSPARENT)
-            setStroke(dp(context, 1f).toInt().coerceAtLeast(1), strokeColor)
-        }
         return LayerDrawable(arrayOf(base, sheen, rim))
     }
 
@@ -399,7 +467,14 @@ object ThemeManager {
         val radii = FloatArray(8) { radius }
         val fill = if (isHero) palette.glassHeroSurface else palette.glassSurface
         val stroke = if (isHero) palette.glassHeroStroke else palette.glassStroke
-        val layer = buildSpecularGlassLayer(context, fill, stroke, palette.isDark, radii)
+        val layer = buildSpecularGlassLayer(
+            context,
+            fill,
+            stroke,
+            palette.isDark,
+            radii,
+            palette.isPureBlack
+        )
         return RippleDrawable(ColorStateList.valueOf(palette.accentSoft), layer, roundMask(radius))
     }
 
@@ -417,25 +492,29 @@ object ThemeManager {
             this.cornerRadii = radii
             setColor(fill)
         }
-        val sheenColors = intArrayOf(
-            withAlpha(accentColor, if (palette.isDark) 0x26 else 0x1A),
-            if (palette.isDark) 0x12FFFFFF else 0x38FFFFFF,
-            0x02FFFFFF
-        )
-        val sheen = GradientDrawable(GradientDrawable.Orientation.TL_BR, sheenColors).apply {
-            shape = GradientDrawable.RECTANGLE
-            this.cornerRadii = radii
-        }
         val rim = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
             this.cornerRadii = radii
             setColor(Color.TRANSPARENT)
             setStroke(
                 dp(context, if (isHero) 1.35f else 1.15f).toInt().coerceAtLeast(1),
-                withAlpha(accentColor, if (palette.isDark) 0x8C else 0x7A)
+                withAlpha(accentColor, if (palette.isPureBlack) 0x54 else if (palette.isDark) 0x8C else 0x7A)
             )
         }
-        val layer = LayerDrawable(arrayOf(base, sheen, rim))
+        val layer = if (palette.isPureBlack) {
+            LayerDrawable(arrayOf(base, rim))
+        } else {
+            val sheenColors = intArrayOf(
+                withAlpha(accentColor, if (palette.isDark) 0x26 else 0x1A),
+                if (palette.isDark) 0x12FFFFFF else 0x38FFFFFF,
+                0x02FFFFFF
+            )
+            val sheen = GradientDrawable(GradientDrawable.Orientation.TL_BR, sheenColors).apply {
+                shape = GradientDrawable.RECTANGLE
+                this.cornerRadii = radii
+            }
+            LayerDrawable(arrayOf(base, sheen, rim))
+        }
         return RippleDrawable(
             ColorStateList.valueOf(withAlpha(accentColor, 0x38)),
             layer,
@@ -464,7 +543,8 @@ object ThemeManager {
             palette.glassPill,
             palette.glassStroke,
             palette.isDark,
-            radii
+            radii,
+            palette.isPureBlack
         )
         return RippleDrawable(ColorStateList.valueOf(palette.accentSoft), layer, roundMask(radius))
     }

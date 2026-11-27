@@ -82,12 +82,18 @@ class DeskClockActivity : AppCompatActivity() {
         }
 
         FocusAnimations.attachGlassPress(binding.btnDeskBack, 0.92f)
+        FocusAnimations.attachGlassPress(binding.btnDeskPureBlack, 0.94f)
         FocusAnimations.attachGlassPress(binding.btnDeskKeepAwake, 0.94f)
         FocusAnimations.attachGlassPress(binding.btnDeskFocusAction, 0.94f)
 
         binding.btnDeskBack.setOnClickListener {
             ThemeManager.performTapHaptic(it)
             finish()
+        }
+        binding.btnDeskPureBlack.setOnClickListener {
+            ThemeManager.performSoftTick(it)
+            ThemeManager.togglePureBlackForClock(this)
+            applyTheme()
         }
         binding.btnDeskKeepAwake.setOnClickListener {
             ThemeManager.performSoftTick(it)
@@ -97,7 +103,11 @@ class DeskClockActivity : AppCompatActivity() {
         }
         binding.deskFocusStrip.setOnClickListener {
             ThemeManager.performSoftTick(it)
-            FocusTimerDialog.show(this, ThemeManager.getPalette(this)) {
+            val palette = ThemeManager.getPalette(
+                this,
+                forcePureBlack = ThemeManager.resolvePureBlackForClock(this)
+            )
+            FocusTimerDialog.show(this, palette) {
                 renderClock(System.currentTimeMillis(), System.currentTimeMillis(), animate = false)
             }
         }
@@ -143,13 +153,24 @@ class DeskClockActivity : AppCompatActivity() {
     }
 
     private fun applyTheme() {
-        val palette = ThemeManager.getPalette(this)
+        val pureBlack = ThemeManager.resolvePureBlackForClock(this)
+        val palette = ThemeManager.getPalette(this, forcePureBlack = pureBlack)
         ThemeManager.applySystemBars(this, palette)
         ThemeManager.applyAmbientBackground(binding.deskClockRoot, palette, animate = false)
         binding.deskAmbientGlow.setThemePalette(palette)
 
         binding.btnDeskBack.background = ThemeManager.pillDrawable(this, palette)
         binding.btnDeskBack.setColorFilter(palette.textPrimary)
+
+        if (palette.isPureBlack) {
+            binding.btnDeskPureBlack.background = ThemeManager.activeChipDrawable(this, palette)
+            binding.ivDeskPureBlackIcon.setColorFilter(Color.WHITE)
+            binding.tvDeskPureBlackLabel.setTextColor(Color.WHITE)
+        } else {
+            binding.btnDeskPureBlack.background = ThemeManager.pillDrawable(this, palette)
+            binding.ivDeskPureBlackIcon.setColorFilter(palette.textSecondary)
+            binding.tvDeskPureBlackLabel.setTextColor(palette.textSecondary)
+        }
 
         if (keepAwake) {
             binding.btnDeskKeepAwake.background = ThemeManager.activeChipDrawable(this, palette)
@@ -174,15 +195,17 @@ class DeskClockActivity : AppCompatActivity() {
         binding.tvDeskHeroEvent.setTextColor(palette.textSecondary)
 
         val digitSp = if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            42f
+            46f
         } else {
             36f
         }
+        val digitBg = if (palette.isPureBlack) Color.BLACK else palette.glassPill
+        val digitStroke = if (palette.isPureBlack) 0x26FFFFFF else palette.glassStroke
         listOf(binding.deskRollingHour, binding.deskRollingMinute, binding.deskRollingSecond)
             .forEach { roller ->
                 roller.setStyle(
-                    bg = palette.glassPill,
-                    stroke = palette.glassStroke,
+                    bg = digitBg,
+                    stroke = digitStroke,
                     text = palette.textPrimary,
                     textSizeSp = digitSp
                 )

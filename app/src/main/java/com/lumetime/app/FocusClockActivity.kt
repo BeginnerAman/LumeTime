@@ -139,6 +139,7 @@ class FocusClockActivity : AppCompatActivity() {
 
     private fun setupInteractions() {
         FocusAnimations.attachGlassPress(binding.btnFocusBack, 0.92f)
+        FocusAnimations.attachGlassPress(binding.btnFocusPureBlack, 0.94f)
         FocusAnimations.attachGlassPress(binding.btnKeepAwake, 0.94f)
         FocusAnimations.attachGlassPress(binding.btnFocusShare, 0.92f)
         FocusAnimations.attachGlassPress(binding.btnFocusEdit, 0.92f)
@@ -146,6 +147,13 @@ class FocusClockActivity : AppCompatActivity() {
         binding.btnFocusBack.setOnClickListener {
             ThemeManager.performTapHaptic(it)
             finish()
+        }
+
+        binding.btnFocusPureBlack.setOnClickListener {
+            ThemeManager.performSoftTick(it)
+            ThemeManager.togglePureBlackForClock(this)
+            applyTheme()
+            renderCountdown(System.currentTimeMillis(), animate = false)
         }
 
         binding.btnKeepAwake.setOnClickListener {
@@ -222,7 +230,10 @@ class FocusClockActivity : AppCompatActivity() {
     }
 
     private fun applyTheme() {
-        val palette = ThemeManager.getPalette(this)
+        val palette = ThemeManager.getPalette(
+            this,
+            forcePureBlack = ThemeManager.resolvePureBlackForClock(this)
+        )
         ThemeManager.applySystemBars(this, palette)
         ThemeManager.applyAmbientBackground(binding.focusRoot, palette, animate = false)
         binding.focusAmbientGlow.setThemePalette(palette)
@@ -235,6 +246,16 @@ class FocusClockActivity : AppCompatActivity() {
 
         binding.btnFocusEdit.background = ThemeManager.pillDrawable(this, palette)
         binding.btnFocusEdit.setColorFilter(palette.textPrimary)
+
+        if (palette.isPureBlack) {
+            binding.btnFocusPureBlack.background = ThemeManager.activeChipDrawable(this, palette)
+            binding.ivFocusPureBlackIcon.setColorFilter(Color.WHITE)
+            binding.tvFocusPureBlackLabel.setTextColor(Color.WHITE)
+        } else {
+            binding.btnFocusPureBlack.background = ThemeManager.pillDrawable(this, palette)
+            binding.ivFocusPureBlackIcon.setColorFilter(palette.textSecondary)
+            binding.tvFocusPureBlackLabel.setTextColor(palette.textSecondary)
+        }
 
         if (keepAwake) {
             binding.btnKeepAwake.background = ThemeManager.activeChipDrawable(this, palette)
@@ -259,6 +280,8 @@ class FocusClockActivity : AppCompatActivity() {
         val isLandscape =
             resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         val digitSp = if (isLandscape) 30f else 32f
+        val digitBg = if (palette.isPureBlack) Color.BLACK else palette.glassPill
+        val digitStroke = if (palette.isPureBlack) 0x26FFFFFF else palette.glassStroke
         listOf(
             binding.focusRollingDays,
             binding.focusRollingHours,
@@ -266,8 +289,8 @@ class FocusClockActivity : AppCompatActivity() {
             binding.focusRollingSeconds
         ).forEach { roller ->
             roller.setStyle(
-                bg = palette.glassPill,
-                stroke = palette.glassStroke,
+                bg = digitBg,
+                stroke = digitStroke,
                 text = palette.textPrimary,
                 textSizeSp = digitSp
             )
@@ -282,7 +305,10 @@ class FocusClockActivity : AppCompatActivity() {
 
     private fun renderCountdown(now: Long, animate: Boolean) {
         val item = currentItem ?: return
-        val palette = ThemeManager.getPalette(this)
+        val palette = ThemeManager.getPalette(
+            this,
+            forcePureBlack = ThemeManager.resolvePureBlackForClock(this)
+        )
         val breakdown = TimeCalculator.calculateBreakdown(item, now)
         val itemAccent = runCatching { Color.parseColor(item.accentHex) }.getOrDefault(palette.accent)
         val displayAccent = if (breakdown.isExpired) palette.textTertiary else itemAccent

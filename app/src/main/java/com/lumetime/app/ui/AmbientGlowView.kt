@@ -30,6 +30,7 @@ class AmbientGlowView @JvmOverloads constructor(
     private var colorSecondary: Int = 0xFF6366F1.toInt()
     private var colorAccent: Int = 0xFF67E8F9.toInt()
     private var isDarkMode: Boolean = true
+    private var pureBlackMode: Boolean = false
     private var breathPhase: Float = 0f
     private var gradientsDirty: Boolean = true
     private var lastW: Int = 0
@@ -44,15 +45,26 @@ class AmbientGlowView @JvmOverloads constructor(
     }
 
     fun setThemePalette(palette: ThemeManager.ThemePalette) {
+        pureBlackMode = palette.isPureBlack
+        if (pureBlackMode) {
+            stopBreathing()
+            visibility = GONE
+            return
+        }
+        visibility = VISIBLE
         colorPrimary = palette.theme.glowPrimary
         colorSecondary = palette.theme.glowSecondary
         colorAccent = palette.accent
         isDarkMode = palette.isDark
         gradientsDirty = true
         invalidate()
+        if (isAttachedToWindow) {
+            startBreathing()
+        }
     }
 
     fun startBreathing() {
+        if (pureBlackMode) return
         if (breathAnimator?.isRunning == true) return
         breathAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
             duration = 16_000L

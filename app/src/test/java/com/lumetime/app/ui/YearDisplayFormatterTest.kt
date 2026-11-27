@@ -64,6 +64,7 @@ class YearDisplayFormatterTest {
         assertEquals(ThemeManager.AppTheme.OBSIDIAN, ThemeManager.AppTheme.fromId("unknown"))
         assertEquals(ThemeManager.AppTheme.AURORA, ThemeManager.AppTheme.fromId("aurora"))
         assertEquals(ThemeManager.AppearanceMode.DARK, ThemeManager.AppearanceMode.fromId(null))
+        assertEquals(ThemeManager.AppearanceMode.AMOLED, ThemeManager.AppearanceMode.fromId("amoled"))
         assertEquals(ThemeManager.AppearanceMode.LIGHT, ThemeManager.AppearanceMode.fromId("light"))
     }
 }

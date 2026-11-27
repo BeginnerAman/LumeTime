@@ -9,6 +9,7 @@
     <string name="done_label">Done</string>
     <string name="mode_auto">Auto</string>
     <string name="mode_dark">Dark</string>
+    <string name="mode_amoled">AMOLED</string>
     <string name="mode_light">Light</string>
     <string name="pinned_hero_label">PINNED FOCUS</string>
     <string name="section_countdowns">Your Countdowns</string>
@@ -78,4 +79,6 @@
     <string name="prep_checklist_label">Prep Checklist</string>
     <string name="add_step_hint">Add step (e.g. Revise Notes)</string>
     <string name="focus_target_reached_toast">Target reached for %s!</string>
+    <string name="pure_black_label">AMOLED</string>
+    <string name="pure_black_desc">Toggle Pure Black AMOLED mode</string>
 </resources>
