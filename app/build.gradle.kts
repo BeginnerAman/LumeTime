@@ -11,8 +11,8 @@ android {
         applicationId = "com.lumetime.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 7
-        versionName = "5.0.0"
+        versionCode = 8
+        versionName = "6.0.0"
     }
 
     buildTypes {

@@ -24,9 +24,9 @@
             android:orientation="vertical"
             android:paddingHorizontal="28dp"
             android:paddingTop="14dp"
-            android:paddingBottom="88dp">
+            android:paddingBottom="120dp">
 
-            <!-- Header -->
+            <!-- Clean Top Header -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -71,17 +71,6 @@
                 </LinearLayout>
 
                 <ImageView
-                    android:id="@+id/btnSearchToggle"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:layout_marginEnd="7dp"
-                    android:clickable="true"
-                    android:contentDescription="@string/search_hint"
-                    android:focusable="true"
-                    android:padding="9dp"
-                    android:src="@drawable/ic_search" />
-
-                <ImageView
                     android:id="@+id/btnBackup"
                     android:layout_width="38dp"
                     android:layout_height="38dp"
@@ -119,141 +108,7 @@
                 </FrameLayout>
             </LinearLayout>
 
-            <!-- Quick Utility Dock: Horizontal Liquid Glass Rail -->
-            <HorizontalScrollView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:scrollbars="none">
-
-                <LinearLayout
-                    android:id="@+id/quickToolsRow"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <LinearLayout
-                        android:id="@+id/btnFocusTimerTool"
-                        android:layout_width="wrap_content"
-                        android:layout_height="34dp"
-                        android:layout_marginEnd="8dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="13dp">
-
-                        <ImageView
-                            android:id="@+id/ivFocusToolIcon"
-                            android:layout_width="15dp"
-                            android:layout_height="15dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/ic_clock" />
-
-                        <TextView
-                            android:id="@+id/tvFocusToolLabel"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="6dp"
-                            android:fontFamily="sans-serif-medium"
-                            android:maxLines="1"
-                            android:text="@string/quick_focus_label"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/btnDeskClockTool"
-                        android:layout_width="wrap_content"
-                        android:layout_height="34dp"
-                        android:layout_marginEnd="8dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="13dp">
-
-                        <ImageView
-                            android:id="@+id/ivDeskClockToolIcon"
-                            android:layout_width="15dp"
-                            android:layout_height="15dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/ic_screen_on" />
-
-                        <TextView
-                            android:id="@+id/tvDeskClockToolLabel"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="6dp"
-                            android:fontFamily="sans-serif-medium"
-                            android:maxLines="1"
-                            android:text="@string/quick_desk_clock_label"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/btnDateCalcTool"
-                        android:layout_width="wrap_content"
-                        android:layout_height="34dp"
-                        android:layout_marginEnd="8dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="13dp">
-
-                        <ImageView
-                            android:id="@+id/ivDateCalcToolIcon"
-                            android:layout_width="15dp"
-                            android:layout_height="15dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/ic_calendar" />
-
-                        <TextView
-                            android:id="@+id/tvDateCalcToolLabel"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="6dp"
-                            android:fontFamily="sans-serif-medium"
-                            android:maxLines="1"
-                            android:text="@string/quick_date_calc_label"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/btnWorldClockTool"
-                        android:layout_width="wrap_content"
-                        android:layout_height="34dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="13dp">
-
-                        <ImageView
-                            android:id="@+id/ivWorldClockToolIcon"
-                            android:layout_width="15dp"
-                            android:layout_height="15dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/ic_icon_plane" />
-
-                        <TextView
-                            android:id="@+id/tvWorldClockToolLabel"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="6dp"
-                            android:fontFamily="sans-serif-medium"
-                            android:maxLines="1"
-                            android:text="@string/quick_world_clock_label"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </LinearLayout>
-            </HorizontalScrollView>
-
-            <!-- Live Active / Completed Focus Session Banner -->
+            <!-- Live Active / Completed Focus Banner -->
             <LinearLayout
                 android:id="@+id/cardLiveFocusBanner"
                 android:layout_width="match_parent"
@@ -344,25 +199,26 @@
                     android:layout_marginTop="8dp" />
             </LinearLayout>
 
-            <!-- 2-Column Split -->
+            <!-- SPACE 1: HOME (Side-by-Side 2-Column Time Pulse + Hero in Landscape) -->
             <LinearLayout
+                android:id="@+id/sectionHome"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:baselineAligned="false"
-                android:orientation="horizontal">
+                android:layout_marginTop="12dp"
+                android:orientation="vertical">
 
-                <!-- Left Column: Year Pulse + Pinned Hero -->
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:baselineAligned="false"
+                    android:orientation="horizontal">
 
                     <LinearLayout
                         android:id="@+id/cardYearPulse"
-                        android:layout_width="match_parent"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
                         android:clickable="true"
                         android:focusable="true"
                         android:orientation="vertical"
@@ -420,7 +276,6 @@
                                 android:src="@drawable/ic_share" />
                         </LinearLayout>
 
-                        <!-- Time Pulse Scope Switcher: Today | Week | Month | Year -->
                         <LinearLayout
                             android:id="@+id/pulseScopeContainer"
                             android:layout_width="match_parent"
@@ -497,7 +352,7 @@
                                 android:fontFamily="sans-serif-medium"
                                 android:includeFontPadding="false"
                                 android:letterSpacing="-0.03"
-                                android:textSize="30sp"
+                                android:textSize="28sp"
                                 android:textStyle="bold" />
 
                             <TextView
@@ -507,7 +362,7 @@
                                 android:layout_marginStart="8dp"
                                 android:layout_marginBottom="4dp"
                                 android:fontFamily="sans-serif-medium"
-                                android:textSize="14sp" />
+                                android:textSize="13sp" />
                         </LinearLayout>
 
                         <TextView
@@ -520,7 +375,7 @@
                         <com.lumetime.app.ui.YearDotMatrixView
                             android:id="@+id/yearDotMatrix"
                             android:layout_width="match_parent"
-                            android:layout_height="88dp"
+                            android:layout_height="84dp"
                             android:layout_marginTop="10dp"
                             android:visibility="gone" />
 
@@ -564,9 +419,10 @@
 
                     <LinearLayout
                         android:id="@+id/cardHeroCountdown"
-                        android:layout_width="match_parent"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
                         android:clickable="true"
                         android:focusable="true"
                         android:orientation="vertical"
@@ -594,20 +450,20 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:fontFamily="sans-serif-medium"
-                                android:paddingHorizontal="10dp"
-                                android:paddingVertical="4dp"
-                                android:textSize="11sp"
+                                android:paddingHorizontal="9dp"
+                                android:paddingVertical="3dp"
+                                android:textSize="10sp"
                                 android:textStyle="bold" />
 
                             <ImageView
                                 android:id="@+id/btnEditHero"
-                                android:layout_width="28dp"
-                                android:layout_height="28dp"
+                                android:layout_width="26dp"
+                                android:layout_height="26dp"
                                 android:layout_marginStart="6dp"
                                 android:clickable="true"
                                 android:contentDescription="@string/edit_short"
                                 android:focusable="true"
-                                android:padding="5dp"
+                                android:padding="4dp"
                                 android:src="@drawable/ic_edit" />
                         </LinearLayout>
 
@@ -764,184 +620,466 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- Right Column: Toolbar + Filter Chips + List -->
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:id="@+id/cardHomeTimersSummary"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="10dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="16dp">
+
+                    <TextView
+                        android:id="@+id/tvHomeSummaryCount"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="sans-serif-medium"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvHomeSummaryCta"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Manage →"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- SPACE 2: TIMERS -->
+            <LinearLayout
+                android:id="@+id/sectionCountdowns"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:layout_weight="1.15"
-                    android:orientation="vertical">
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tvSectionCountdowns"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="@string/section_countdowns"
+                        android:textSize="17sp"
+                        android:textStyle="bold" />
+
+                    <ImageView
+                        android:id="@+id/btnSearchToggle"
+                        android:layout_width="34dp"
+                        android:layout_height="34dp"
+                        android:layout_marginEnd="6dp"
+                        android:clickable="true"
+                        android:contentDescription="@string/search_hint"
+                        android:focusable="true"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_search" />
 
                     <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:id="@+id/tvSectionCountdowns"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:fontFamily="sans-serif-medium"
-                            android:text="@string/section_countdowns"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-
-                        <LinearLayout
-                            android:id="@+id/btnToggleHours"
-                            android:layout_width="wrap_content"
-                            android:layout_height="34dp"
-                            android:layout_marginEnd="6dp"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:gravity="center"
-                            android:orientation="horizontal"
-                            android:paddingHorizontal="10dp">
-
-                            <ImageView
-                                android:id="@+id/ivHoursIcon"
-                                android:layout_width="14dp"
-                                android:layout_height="14dp"
-                                android:contentDescription="@null"
-                                android:src="@drawable/ic_clock" />
-
-                            <TextView
-                                android:id="@+id/tvHoursModeLabel"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="4dp"
-                                android:fontFamily="sans-serif-medium"
-                                android:text="Days"
-                                android:textSize="11sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:id="@+id/btnSortMode"
-                            android:layout_width="wrap_content"
-                            android:layout_height="34dp"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:gravity="center"
-                            android:orientation="horizontal"
-                            android:paddingHorizontal="10dp">
-
-                            <ImageView
-                                android:id="@+id/ivSortIcon"
-                                android:layout_width="14dp"
-                                android:layout_height="14dp"
-                                android:contentDescription="@null"
-                                android:src="@drawable/ic_sort" />
-
-                            <TextView
-                                android:id="@+id/tvSortModeLabel"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="4dp"
-                                android:fontFamily="sans-serif-medium"
-                                android:text="Soonest"
-                                android:textSize="11sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/searchPill"
-                        android:layout_width="match_parent"
-                        android:layout_height="40dp"
-                        android:layout_marginTop="10dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="12dp"
-                        android:visibility="gone">
-
-                        <ImageView
-                            android:id="@+id/ivSearchPillIcon"
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/ic_search" />
-
-                        <EditText
-                            android:id="@+id/etSearch"
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_marginStart="8dp"
-                            android:layout_weight="1"
-                            android:background="@null"
-                            android:hint="@string/search_hint"
-                            android:imeOptions="actionSearch"
-                            android:importantForAutofill="no"
-                            android:inputType="text"
-                            android:maxLines="1"
-                            android:textSize="13sp" />
-
-                        <ImageView
-                            android:id="@+id/btnClearSearch"
-                            android:layout_width="26dp"
-                            android:layout_height="26dp"
-                            android:clickable="true"
-                            android:contentDescription="@null"
-                            android:focusable="true"
-                            android:padding="5dp"
-                            android:src="@drawable/ic_close"
-                            android:visibility="gone" />
-                    </LinearLayout>
-
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rvFilterChips"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:clipToPadding="false"
-                        android:orientation="horizontal" />
-
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rvCountdowns"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:nestedScrollingEnabled="false" />
-
-                    <LinearLayout
-                        android:id="@+id/cardEmptyState"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
+                        android:id="@+id/btnToggleHours"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:layout_marginEnd="6dp"
+                        android:clickable="true"
+                        android:focusable="true"
                         android:gravity="center"
-                        android:orientation="vertical"
-                        android:padding="24dp"
-                        android:visibility="gone">
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="10dp">
 
                         <ImageView
-                            android:id="@+id/ivEmptySparkle"
-                            android:layout_width="30dp"
-                            android:layout_height="30dp"
+                            android:id="@+id/ivHoursIcon"
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
                             android:contentDescription="@null"
-                            android:src="@drawable/ic_sparkle" />
+                            android:src="@drawable/ic_clock" />
 
                         <TextView
-                            android:id="@+id/tvEmptyTitle"
+                            android:id="@+id/tvHoursModeLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
+                            android:layout_marginStart="4dp"
                             android:fontFamily="sans-serif-medium"
-                            android:text="@string/empty_countdowns_title"
+                            android:text="Days"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/btnSortMode"
+                        android:layout_width="wrap_content"
+                        android:layout_height="34dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="10dp">
+
+                        <ImageView
+                            android:id="@+id/ivSortIcon"
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_sort" />
+
+                        <TextView
+                            android:id="@+id/tvSortModeLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="Soonest"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/searchPill"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:id="@+id/ivSearchPillIcon"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_search" />
+
+                    <EditText
+                        android:id="@+id/etSearch"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:background="@null"
+                        android:hint="@string/search_hint"
+                        android:imeOptions="actionSearch"
+                        android:importantForAutofill="no"
+                        android:inputType="text"
+                        android:maxLines="1"
+                        android:textSize="13sp" />
+
+                    <ImageView
+                        android:id="@+id/btnClearSearch"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:clickable="true"
+                        android:contentDescription="@null"
+                        android:focusable="true"
+                        android:padding="5dp"
+                        android:src="@drawable/ic_close"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvFilterChips"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:clipToPadding="false"
+                    android:orientation="horizontal" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvCountdowns"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:nestedScrollingEnabled="false" />
+
+                <LinearLayout
+                    android:id="@+id/cardEmptyState"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="24dp"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:id="@+id/ivEmptySparkle"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_sparkle" />
+
+                    <TextView
+                        android:id="@+id/tvEmptyTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="@string/empty_countdowns_title"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvEmptyDesc"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center"
+                        android:text="@string/empty_countdowns_desc"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- SPACE 3: STUDIO -->
+            <LinearLayout
+                android:id="@+id/sectionTools"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tvStudioSectionHeader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.06"
+                    android:text="TIME STUDIO"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/btnFocusTimerTool"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="14dp">
+
+                    <ImageView
+                        android:id="@+id/ivFocusToolIcon"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_clock" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvFocusToolLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/focus_timer_title"
                             android:textSize="15sp"
                             android:textStyle="bold" />
 
                         <TextView
-                            android:id="@+id/tvEmptyDesc"
+                            android:id="@+id/tvFocusToolSub"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:gravity="center"
-                            android:text="@string/empty_countdowns_desc"
-                            android:textSize="12sp" />
+                            android:layout_marginTop="2dp"
+                            android:text="Pomodoro presets, custom mins &amp; chime alerts"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/btnDeskClockTool"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="14dp">
+
+                    <ImageView
+                        android:id="@+id/ivDeskClockToolIcon"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_screen_on" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvDeskClockToolLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/quick_desk_clock_label"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvDeskClockToolSub"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Full-screen rolling odometer clock &amp; Focus desk"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/btnWorldClockTool"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="14dp">
+
+                    <ImageView
+                        android:id="@+id/ivWorldClockToolIcon"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_icon_plane" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvWorldClockToolLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/world_clock_title"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvWorldClockToolSub"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/btnDateCalcTool"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="14dp">
+
+                    <ImageView
+                        android:id="@+id/ivDateCalcToolIcon"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_calendar" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvDateCalcToolLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/date_calc_title"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvDateCalcToolSub"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Age, weekdays count &amp; +/- day offset calculator"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/btnStudioInsights"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="14dp">
+
+                    <ImageView
+                        android:id="@+id/ivStudioInsightsIcon"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_sparkle" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvStudioInsightsLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="Profile, 7-Day Chart &amp; Backup"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvStudioInsightsSub"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Focus consistency chart, awake hours &amp; JSON backup"
+                            android:textSize="11sp" />
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
+
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
@@ -951,7 +1089,7 @@
         android:layout_height="42dp"
         android:layout_gravity="bottom|start"
         android:layout_marginStart="24dp"
-        android:layout_marginBottom="18dp"
+        android:layout_marginBottom="80dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingHorizontal="16dp"
@@ -979,20 +1117,20 @@
     <LinearLayout
         android:id="@+id/fabAddCountdown"
         android:layout_width="wrap_content"
-        android:layout_height="48dp"
+        android:layout_height="46dp"
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="24dp"
-        android:layout_marginBottom="18dp"
+        android:layout_marginBottom="80dp"
         android:clickable="true"
         android:elevation="6dp"
         android:focusable="true"
         android:gravity="center"
         android:orientation="horizontal"
-        android:paddingHorizontal="18dp">
+        android:paddingHorizontal="16dp">
 
         <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
             android:contentDescription="@string/add_countdown"
             android:src="@drawable/ic_add" />
 
@@ -1005,6 +1143,100 @@
             android:textColor="#FFFFFFFF"
             android:textSize="14sp"
             android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/bottomNavDock"
+        android:layout_width="wrap_content"
+        android:layout_height="52dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="14dp"
+        android:elevation="10dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:padding="5dp">
+
+        <LinearLayout
+            android:id="@+id/navTabHome"
+            android:layout_width="98dp"
+            android:layout_height="match_parent"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/ivNavHome"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_sparkle" />
+
+            <TextView
+                android:id="@+id/tvNavHome"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Home"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/navTabTimers"
+            android:layout_width="100dp"
+            android:layout_height="match_parent"
+            android:layout_marginHorizontal="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/ivNavTimers"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_icon_hourglass" />
+
+            <TextView
+                android:id="@+id/tvNavTimers"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Timers"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/navTabStudio"
+            android:layout_width="98dp"
+            android:layout_height="match_parent"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/ivNavStudio"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_clock" />
+
+            <TextView
+                android:id="@+id/tvNavStudio"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Studio"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
     </LinearLayout>
 
 </FrameLayout>

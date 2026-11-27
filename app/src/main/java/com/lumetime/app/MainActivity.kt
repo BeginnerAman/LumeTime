@@ -32,11 +32,13 @@ import com.lumetime.app.core.PrecisionClockTicker
 import com.lumetime.app.core.ReminderScheduler
 import com.lumetime.app.core.TimeCalculator
 import com.lumetime.app.core.TimerAlertManager
+import com.lumetime.app.core.WorldClockEngine
 import com.lumetime.app.data.CountdownFilter
 import com.lumetime.app.data.CountdownSortMode
 import com.lumetime.app.data.CountdownStore
 import com.lumetime.app.data.FocusTimerStore
 import com.lumetime.app.data.PersonalProfilePrefs
+import com.lumetime.app.data.WorldClockStore
 import com.lumetime.app.databinding.ActivityMainBinding
 import com.lumetime.app.model.CountdownCategory
 import com.lumetime.app.model.CountdownItem
@@ -130,6 +132,9 @@ class MainActivity : AppCompatActivity() {
     private var displayFormat: CountdownDisplayFormat = CountdownDisplayFormat.DAYS_HOURS
     private var metricMode: YearPulseMetricMode = YearPulseMetricMode.DAYS_LEFT
     private var activePulseScope: TimePulseScope = TimePulseScope.YEAR
+    private enum class NavTab { HOME, TIMERS, STUDIO }
+
+    private var activeNavTab: NavTab = NavTab.HOME
     private var yearDotsExpanded: Boolean = false
     private var searchVisible: Boolean = false
     private var searchQuery: String = ""
@@ -142,6 +147,7 @@ class MainActivity : AppCompatActivity() {
     private var basePadBottom = 0
     private var baseFabMarginBottom = 0
     private var baseFabMarginEnd = 0
+    private var baseNavDockMarginBottom = 0
 
     private val tickRunnable = object : Runnable {
         override fun run() {
@@ -187,6 +193,8 @@ class MainActivity : AppCompatActivity() {
             yearDotsExpanded = savedInstanceState.getBoolean(KEY_DOTS_EXPANDED, false)
             searchVisible = savedInstanceState.getBoolean(KEY_SEARCH_VISIBLE, false)
             searchQuery = savedInstanceState.getString(KEY_SEARCH_QUERY, "")
+            val savedNav = savedInstanceState.getInt(KEY_NAV_TAB, 0)
+            activeNavTab = NavTab.entries.getOrElse(savedNav) { NavTab.HOME }
         } else {
             val savedScopeName = getSharedPreferences("lumetime_ui_prefs", MODE_PRIVATE)
                 .getString(KEY_PULSE_SCOPE, TimePulseScope.YEAR.name)
@@ -205,6 +213,7 @@ class MainActivity : AppCompatActivity() {
             binding.etSearch.setText(searchQuery)
         }
         reloadCountdowns(animateHeroRoll = false)
+        applyNavTab(animate = false)
         applyTheme(animate = false)
     }
 
@@ -236,6 +245,7 @@ class MainActivity : AppCompatActivity() {
         outState.putBoolean(KEY_DOTS_EXPANDED, yearDotsExpanded)
         outState.putBoolean(KEY_SEARCH_VISIBLE, searchVisible)
         outState.putString(KEY_SEARCH_QUERY, searchQuery)
+        outState.putInt(KEY_NAV_TAB, activeNavTab.ordinal)
     }
 
     private fun captureBaseDimensions() {
@@ -246,6 +256,8 @@ class MainActivity : AppCompatActivity() {
         val fabParams = binding.fabAddCountdown.layoutParams as ViewGroup.MarginLayoutParams
         baseFabMarginBottom = fabParams.bottomMargin
         baseFabMarginEnd = fabParams.marginEnd
+        val dockParams = binding.bottomNavDock.layoutParams as ViewGroup.MarginLayoutParams
+        baseNavDockMarginBottom = dockParams.bottomMargin
     }
 
     private fun setupInsets() {
@@ -266,6 +278,10 @@ class MainActivity : AppCompatActivity() {
                 bottomMargin = baseFabMarginBottom + bars.bottom
                 marginStart = baseFabMarginEnd + bars.left
             }.also { binding.undoBanner.layoutParams = it }
+
+            (binding.bottomNavDock.layoutParams as ViewGroup.MarginLayoutParams).apply {
+                bottomMargin = baseNavDockMarginBottom + bars.bottom
+            }.also { binding.bottomNavDock.layoutParams = it }
             insets
         }
     }
@@ -421,13 +437,39 @@ class MainActivity : AppCompatActivity() {
         FocusAnimations.attachGlassPress(binding.btnBackup, 0.92f)
         FocusAnimations.attachGlassPress(binding.btnWidgetsStudio, 0.92f)
         FocusAnimations.attachGlassPress(binding.btnThemePicker, 0.92f)
-        FocusAnimations.attachGlassPress(binding.btnFocusTimerTool, 0.96f)
-        FocusAnimations.attachGlassPress(binding.btnDeskClockTool, 0.96f)
-        FocusAnimations.attachGlassPress(binding.btnDateCalcTool, 0.96f)
-        FocusAnimations.attachGlassPress(binding.btnWorldClockTool, 0.96f)
+        FocusAnimations.attachGlassPress(binding.btnFocusTimerTool, 0.98f)
+        FocusAnimations.attachGlassPress(binding.btnDeskClockTool, 0.98f)
+        FocusAnimations.attachGlassPress(binding.btnDateCalcTool, 0.98f)
+        FocusAnimations.attachGlassPress(binding.btnWorldClockTool, 0.98f)
+        FocusAnimations.attachGlassPress(binding.btnStudioInsights, 0.98f)
+        FocusAnimations.attachGlassPress(binding.cardHomeTimersSummary, 0.98f)
         FocusAnimations.attachGlassPress(binding.cardYearPulse, 0.985f)
         FocusAnimations.attachGlassPress(binding.cardHeroCountdown, 0.985f)
         FocusAnimations.attachGlassPress(binding.fabAddCountdown, 0.94f)
+
+        listOf(
+            binding.navTabHome to NavTab.HOME,
+            binding.navTabTimers to NavTab.TIMERS,
+            binding.navTabStudio to NavTab.STUDIO
+        ).forEach { (tabView, tab) ->
+            tabView.setOnClickListener { view ->
+                if (activeNavTab == tab) return@setOnClickListener
+                ThemeManager.performSoftTick(view)
+                activeNavTab = tab
+                applyNavTab(animate = true)
+            }
+        }
+
+        binding.cardHomeTimersSummary.setOnClickListener { view ->
+            ThemeManager.performSoftTick(view)
+            activeNavTab = NavTab.TIMERS
+            applyNavTab(animate = true)
+        }
+
+        binding.btnStudioInsights.setOnClickListener { view ->
+            ThemeManager.performTapHaptic(view)
+            openPersonalizeSheet()
+        }
 
         binding.btnSearchToggle.setOnClickListener { view ->
             ThemeManager.performSoftTick(view)
@@ -766,6 +808,33 @@ class MainActivity : AppCompatActivity() {
         mainHandler.postDelayed(hideUndoRunnable, 4_500L)
     }
 
+    private fun applyNavTab(animate: Boolean) {
+        if (animate) {
+            TransitionManager.beginDelayedTransition(binding.contentColumn)
+        }
+        binding.sectionHome.visibility = if (activeNavTab == NavTab.HOME) View.VISIBLE else View.GONE
+        binding.sectionCountdowns.visibility = if (activeNavTab == NavTab.TIMERS) View.VISIBLE else View.GONE
+        binding.sectionTools.visibility = if (activeNavTab == NavTab.STUDIO) View.VISIBLE else View.GONE
+        binding.fabAddCountdown.visibility = if (activeNavTab == NavTab.STUDIO) View.GONE else View.VISIBLE
+        binding.mainScroll.scrollTo(0, 0)
+        styleNavTabs(ThemeManager.getPalette(this))
+    }
+
+    private fun styleNavTabs(palette: ThemeManager.ThemePalette) {
+        binding.bottomNavDock.background = ThemeManager.cardDrawable(this, palette, isHero = true)
+        listOf(
+            Triple(binding.navTabHome, binding.ivNavHome, binding.tvNavHome) to NavTab.HOME,
+            Triple(binding.navTabTimers, binding.ivNavTimers, binding.tvNavTimers) to NavTab.TIMERS,
+            Triple(binding.navTabStudio, binding.ivNavStudio, binding.tvNavStudio) to NavTab.STUDIO
+        ).forEach { (views, tab) ->
+            val (container, icon, label) = views
+            val active = activeNavTab == tab
+            container.background = if (active) ThemeManager.activeChipDrawable(this, palette) else null
+            icon.setColorFilter(if (active) Color.WHITE else palette.textSecondary)
+            label.setTextColor(if (active) Color.WHITE else palette.textSecondary)
+        }
+    }
+
     private fun reloadCountdowns(
         animateHeroRoll: Boolean,
         forceReloadFromDisk: Boolean = false
@@ -776,6 +845,11 @@ class MainActivity : AppCompatActivity() {
         updateHeroCountdown(now, animateRoll = animateHeroRoll)
         refreshListOnly(now)
         updateToolbarLabels()
+        binding.tvHomeSummaryCount.text = when (allItems.size) {
+            0 -> "No countdowns yet • Tap Add"
+            1 -> "1 countdown tracked"
+            else -> "${allItems.size} countdowns & habits tracked"
+        }
     }
 
     private fun applyYearDotsVisibility(animate: Boolean) {
@@ -859,27 +933,38 @@ class MainActivity : AppCompatActivity() {
         binding.btnThemePicker.background = ThemeManager.pillDrawable(this, palette)
         binding.viewThemeSwatch.background = ThemeManager.swatchOrbDrawable(this, palette.theme)
 
-        binding.btnFocusTimerTool.background = ThemeManager.pillDrawable(this, palette)
-        binding.ivFocusToolIcon.setColorFilter(palette.accent)
-        binding.tvFocusToolLabel.setTextColor(palette.textPrimary)
-
-        binding.btnDeskClockTool.background = ThemeManager.pillDrawable(this, palette)
-        binding.ivDeskClockToolIcon.setColorFilter(palette.accent)
-        binding.tvDeskClockToolLabel.setTextColor(palette.textPrimary)
-
         binding.pbHeaderFocusGoal.setColors(
             track = palette.progressTrack,
             accentStart = palette.accentEnd,
             accentEnd = palette.accent
         )
 
-        binding.btnDateCalcTool.background = ThemeManager.pillDrawable(this, palette)
+        binding.tvStudioSectionHeader.setTextColor(palette.accent)
+        binding.cardHomeTimersSummary.background = ThemeManager.pillDrawable(this, palette)
+        binding.tvHomeSummaryCount.setTextColor(palette.textPrimary)
+        binding.tvHomeSummaryCta.setTextColor(palette.accent)
+
+        binding.btnDeskClockTool.background = ThemeManager.cardDrawable(this, palette)
+        binding.ivDeskClockToolIcon.setColorFilter(palette.accent)
+        binding.tvDeskClockToolLabel.setTextColor(palette.textPrimary)
+        binding.tvDeskClockToolSub.setTextColor(palette.textSecondary)
+
+        binding.btnDateCalcTool.background = ThemeManager.cardDrawable(this, palette)
         binding.ivDateCalcToolIcon.setColorFilter(palette.accent)
         binding.tvDateCalcToolLabel.setTextColor(palette.textPrimary)
+        binding.tvDateCalcToolSub.setTextColor(palette.textSecondary)
 
-        binding.btnWorldClockTool.background = ThemeManager.pillDrawable(this, palette)
+        binding.btnWorldClockTool.background = ThemeManager.cardDrawable(this, palette)
         binding.ivWorldClockToolIcon.setColorFilter(palette.accent)
         binding.tvWorldClockToolLabel.setTextColor(palette.textPrimary)
+        binding.tvWorldClockToolSub.setTextColor(palette.textSecondary)
+
+        binding.btnStudioInsights.background = ThemeManager.cardDrawable(this, palette)
+        binding.ivStudioInsightsIcon.setColorFilter(palette.accent)
+        binding.tvStudioInsightsLabel.setTextColor(palette.textPrimary)
+        binding.tvStudioInsightsSub.setTextColor(palette.textSecondary)
+
+        styleNavTabs(palette)
         updateQuickToolsBar(System.currentTimeMillis())
 
         binding.searchPill.background = ThemeManager.pillDrawable(this, palette)
@@ -1003,17 +1088,42 @@ class MainActivity : AppCompatActivity() {
             TimerAlertManager.playCompletionChimeAndVibrate(this)
         }
 
+        binding.ivFocusToolIcon.setColorFilter(palette.accent)
+        binding.tvFocusToolLabel.setTextColor(palette.textPrimary)
+        binding.tvFocusToolSub.setTextColor(palette.textSecondary)
+
+        val profile = PersonalProfilePrefs.load(this, now)
         if (timerState.isTimerRunning) {
             val rem = FocusTimerEngine.remainingTimerMillis(timerState, now)
-            binding.tvFocusToolLabel.text = "Focus ${FocusTimerEngine.formatMmSs(rem)}"
-            binding.btnFocusTimerTool.background = ThemeManager.tintedTagDrawable(this, palette, palette.accent)
+            binding.tvFocusToolLabel.text = "Focus • ${FocusTimerEngine.formatMmSs(rem)}"
+            binding.tvFocusToolSub.text = "${timerState.sessionLabel} running • Tap to open controls"
+            binding.btnFocusTimerTool.background =
+                ThemeManager.accentedCardDrawable(this, palette, palette.accent, isHero = false)
         } else if (timerState.isStopwatchRunning) {
             val elapsed = FocusTimerEngine.elapsedStopwatchMillis(timerState, now)
-            binding.tvFocusToolLabel.text = "SW ${FocusTimerEngine.formatMmSs(elapsed)}"
-            binding.btnFocusTimerTool.background = ThemeManager.tintedTagDrawable(this, palette, palette.accent)
+            binding.tvFocusToolLabel.text = "Stopwatch • ${FocusTimerEngine.formatMmSs(elapsed)}"
+            binding.tvFocusToolSub.text = "Running live • Tap to record laps or pause"
+            binding.btnFocusTimerTool.background =
+                ThemeManager.accentedCardDrawable(this, palette, palette.accent, isHero = false)
         } else {
-            binding.tvFocusToolLabel.text = getString(R.string.quick_focus_label)
-            binding.btnFocusTimerTool.background = ThemeManager.pillDrawable(this, palette)
+            binding.tvFocusToolLabel.text = getString(R.string.focus_timer_title)
+            binding.tvFocusToolSub.text =
+                "Today: ${profile.focusedMinutesToday}/${profile.dailyFocusGoalMinutes}m • Presets & Custom timer"
+            binding.btnFocusTimerTool.background = ThemeManager.cardDrawable(this, palette)
+        }
+
+        val cities = WorldClockStore.loadPinnedCities(this).take(2)
+        if (cities.isNotEmpty()) {
+            val clocks = WorldClockEngine.evaluateZones(
+                cities,
+                now,
+                use24Hour = android.text.format.DateFormat.is24HourFormat(this)
+            )
+            binding.tvWorldClockToolSub.text = clocks.joinToString("  •  ") {
+                "${it.city.city.substringBefore(" /")}: ${it.formattedTime}"
+            }
+        } else {
+            binding.tvWorldClockToolSub.text = "Compare cities & shift meeting hours"
         }
 
         val timerPausedMid = !timerState.isTimerRunning &&
@@ -1246,5 +1356,6 @@ class MainActivity : AppCompatActivity() {
         private const val KEY_DOTS_EXPANDED = "dots_expanded"
         private const val KEY_SEARCH_VISIBLE = "search_visible"
         private const val KEY_SEARCH_QUERY = "search_query"
+        private const val KEY_NAV_TAB = "nav_tab"
     }
 }
