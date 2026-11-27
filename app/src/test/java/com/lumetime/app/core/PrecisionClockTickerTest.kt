@@ -26,7 +26,7 @@ class PrecisionClockTickerTest {
     }
 
     @Test
-    fun `snapNowToSecond keeps +/- 350ms jitter inside the exact same whole second`() {
+    fun `snapNowToSecond keeps plus or minus 350ms jitter inside the exact same whole second`() {
         val baseSecond = 1_795_000_005_000L
         assertEquals(baseSecond, PrecisionClockTicker.snapNowToSecond(baseSecond + 150L))
         assertEquals(baseSecond, PrecisionClockTicker.snapNowToSecond(baseSecond + 500L))
