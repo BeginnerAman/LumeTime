@@ -108,6 +108,10 @@
             android:name=".core.ReminderReceiver"
             android:exported="false" />
 
+        <receiver
+            android:name=".core.FocusTimerReceiver"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

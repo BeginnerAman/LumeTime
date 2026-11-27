@@ -37,7 +37,7 @@ class ReminderReceiver : BroadcastReceiver() {
             if (!granted) return
         }
 
-        ensureChannel(context)
+        TimerAlertManager.ensureHighImportanceChannel(context)
 
         val bodyText = if (stage == ReminderScheduler.STAGE_DAY_BEFORE) {
             "24 hours left until $title"
@@ -53,16 +53,20 @@ class ReminderReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(context, TimerAlertManager.ALERTS_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_sparkle)
             .setContentTitle(title.trim())
             .setContentText(bodyText)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setAutoCancel(true)
             .setContentIntent(tapPending)
             .build()
 
         NotificationManagerCompat.from(context).notify(itemId.hashCode() + stage.hashCode(), notification)
+        if (stage == ReminderScheduler.STAGE_EVENT_TIME) {
+            TimerAlertManager.playCompletionChimeAndVibrate(context)
+        }
 
         // If repeating event arrived, queue next cycle's reminder.
         if (stage == ReminderScheduler.STAGE_EVENT_TIME) {

@@ -12,8 +12,9 @@ import android.widget.TextView
 import com.lumetime.app.core.FocusTimerEngine
 import com.lumetime.app.core.FocusTimerSnapshot
 import com.lumetime.app.core.FocusToolTab
-import com.lumetime.app.core.TimeCalculator
+import com.lumetime.app.core.TimerAlertManager
 import com.lumetime.app.data.FocusTimerStore
+import com.lumetime.app.data.PersonalProfilePrefs
 import com.lumetime.app.databinding.DialogFocusTimerBinding
 import java.util.Locale
 
@@ -32,10 +33,13 @@ object FocusTimerDialog {
         TimerPreset("15m Rest", FocusTimerEngine.LONG_BREAK_MILLIS)
     )
 
+    private val sessionLabels = listOf("Deep Focus", "Study", "Coding", "Reading", "Workout")
+
     fun show(
         context: Context,
         palette: ThemeManager.ThemePalette,
-        onStateChanged: () -> Unit = {}
+        onStateChanged: () -> Unit = {},
+        onRequestNotificationPermission: (() -> Unit)? = null
     ) {
         val dialog = GlassSheetHelper.createBottomSheet(context)
         val binding = DialogFocusTimerBinding.inflate(LayoutInflater.from(context))
@@ -54,9 +58,45 @@ object FocusTimerDialog {
         var completionCelebrated = false
         val handler = Handler(Looper.getMainLooper())
 
-        fun saveAndNotify() {
+        fun saveAndNotify(syncAlarm: Boolean = true) {
             FocusTimerStore.save(context, snapshot)
+            if (syncAlarm) {
+                TimerAlertManager.syncFocusAlarm(context, snapshot)
+            }
             onStateChanged()
+        }
+
+        fun renderLabels() {
+            binding.timerLabelsContainer.removeAllViews()
+            val padH = ThemeManager.dp(context, 11f).toInt()
+            val height = ThemeManager.dp(context, 30f).toInt()
+            val gap = ThemeManager.dp(context, 7f).toInt()
+            sessionLabels.forEach { label ->
+                val selected = snapshot.sessionLabel == label
+                val chip = TextView(context).apply {
+                    text = label
+                    textSize = 11f
+                    gravity = Gravity.CENTER
+                    setPadding(padH, 0, padH, 0)
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        height
+                    ).apply { marginEnd = gap }
+                    background = if (selected) {
+                        ThemeManager.tintedTagDrawable(context, palette, palette.accent)
+                    } else {
+                        ThemeManager.pillDrawable(context, palette)
+                    }
+                    setTextColor(if (selected) palette.accent else palette.textSecondary)
+                    setOnClickListener {
+                        ThemeManager.performSoftTick(it)
+                        snapshot = snapshot.copy(sessionLabel = label)
+                        saveAndNotify(syncAlarm = snapshot.isTimerRunning)
+                        renderLabels()
+                    }
+                }
+                binding.timerLabelsContainer.addView(chip)
+            }
         }
 
         fun renderPresets() {
@@ -169,6 +209,7 @@ object FocusTimerDialog {
             binding.btnStopwatchReset.setTextColor(palette.textSecondary)
 
             renderPresets()
+            renderLabels()
             renderLaps()
         }
 
@@ -176,15 +217,29 @@ object FocusTimerDialog {
             val now = System.currentTimeMillis()
 
             if (snapshot.isTimerRunning && FocusTimerEngine.isTimerCompleted(snapshot, now)) {
+                val completedMins = ((snapshot.timerDurationMillis + 30_000L) / 60_000L)
+                    .toInt()
+                    .coerceAtLeast(1)
+                if (!snapshot.completedLogged) {
+                    PersonalProfilePrefs.recordFocusSession(context, completedMins, now)
+                }
                 snapshot = snapshot.copy(
                     isTimerRunning = false,
                     timerRemainingMillis = 0L,
-                    timerTargetEndMillis = 0L
+                    timerTargetEndMillis = 0L,
+                    completedLogged = true,
+                    completedAcknowledged = false
                 )
-                saveAndNotify()
+                saveAndNotify(syncAlarm = true)
                 if (!completionCelebrated) {
                     completionCelebrated = true
                     ThemeManager.performTapHaptic(binding.root)
+                    TimerAlertManager.playCompletionChimeAndVibrate(context)
+                    TimerAlertManager.showFocusCompleteNotification(
+                        context,
+                        snapshot.sessionLabel,
+                        completedMins
+                    )
                 }
             }
 
@@ -207,11 +262,18 @@ object FocusTimerDialog {
             binding.tvTimerReadout.setTextColor(palette.textPrimary)
             binding.tvTimerStatus.text = when {
                 remaining == 0L -> "SESSION DONE"
-                snapshot.isTimerRunning -> "FOCUSING"
+                snapshot.isTimerRunning -> snapshot.sessionLabel.uppercase(Locale.US)
                 remaining < snapshot.timerDurationMillis -> "PAUSED"
-                else -> "READY"
+                else -> snapshot.sessionLabel.uppercase(Locale.US)
             }
             binding.tvTimerStatus.setTextColor(ringColor)
+            binding.btnStartBreakQuick.visibility = if (remaining == 0L) View.VISIBLE else View.GONE
+            binding.btnStartBreakQuick.background = ThemeManager.tintedTagDrawable(
+                context,
+                palette,
+                palette.accent
+            )
+            binding.btnStartBreakQuick.setTextColor(palette.accent)
             binding.btnTimerStartPause.text = when {
                 remaining == 0L -> "Restart"
                 snapshot.isTimerRunning -> "Pause"
@@ -258,8 +320,26 @@ object FocusTimerDialog {
         binding.btnTimerStartPause.setOnClickListener {
             ThemeManager.performTapHaptic(it)
             completionCelebrated = false
+            val wasRunning = snapshot.isTimerRunning
             snapshot = FocusTimerEngine.toggleTimer(snapshot, System.currentTimeMillis())
+            if (!wasRunning && snapshot.isTimerRunning) {
+                onRequestNotificationPermission?.invoke()
+            }
             saveAndNotify()
+            renderDynamicTick()
+        }
+
+        binding.btnStartBreakQuick.setOnClickListener {
+            ThemeManager.performTapHaptic(it)
+            completionCelebrated = false
+            snapshot = FocusTimerEngine.selectPreset(
+                snapshot.copy(sessionLabel = "Short Break"),
+                FocusTimerEngine.SHORT_BREAK_MILLIS
+            )
+            snapshot = FocusTimerEngine.toggleTimer(snapshot, System.currentTimeMillis())
+            onRequestNotificationPermission?.invoke()
+            saveAndNotify()
+            renderStaticControls()
             renderDynamicTick()
         }
 

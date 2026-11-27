@@ -12,10 +12,13 @@ enum class FocusToolTab {
  */
 data class FocusTimerSnapshot(
     val activeTab: FocusToolTab = FocusToolTab.TIMER,
+    val sessionLabel: String = "Deep Focus",
     val timerDurationMillis: Long = FocusTimerEngine.DEFAULT_POMODORO_MILLIS,
     val timerRemainingMillis: Long = FocusTimerEngine.DEFAULT_POMODORO_MILLIS,
     val timerTargetEndMillis: Long = 0L,
     val isTimerRunning: Boolean = false,
+    val completedLogged: Boolean = false,
+    val completedAcknowledged: Boolean = true,
     val stopwatchStartMillis: Long = 0L,
     val stopwatchAccumulatedMillis: Long = 0L,
     val isStopwatchRunning: Boolean = false,
@@ -40,7 +43,9 @@ object FocusTimerEngine {
             timerDurationMillis = safeDuration,
             timerRemainingMillis = safeDuration,
             timerTargetEndMillis = 0L,
-            isTimerRunning = false
+            isTimerRunning = false,
+            completedLogged = false,
+            completedAcknowledged = true
         )
     }
 
@@ -58,7 +63,9 @@ object FocusTimerEngine {
             snapshot.copy(
                 timerDurationMillis = nextDuration,
                 timerRemainingMillis = nextRemaining,
-                timerTargetEndMillis = nowMillis + nextRemaining
+                timerTargetEndMillis = nowMillis + nextRemaining,
+                completedLogged = false,
+                completedAcknowledged = true
             )
         } else {
             val base = if (snapshot.timerRemainingMillis > 0L) snapshot.timerRemainingMillis else snapshot.timerDurationMillis
@@ -66,7 +73,9 @@ object FocusTimerEngine {
             snapshot.copy(
                 timerDurationMillis = next,
                 timerRemainingMillis = next,
-                timerTargetEndMillis = 0L
+                timerTargetEndMillis = 0L,
+                completedLogged = false,
+                completedAcknowledged = true
             )
         }
     }
@@ -88,7 +97,9 @@ object FocusTimerEngine {
             snapshot.copy(
                 timerRemainingMillis = startFrom,
                 timerTargetEndMillis = nowMillis + startFrom,
-                isTimerRunning = true
+                isTimerRunning = true,
+                completedLogged = false,
+                completedAcknowledged = true
             )
         }
     }
@@ -97,7 +108,9 @@ object FocusTimerEngine {
         return snapshot.copy(
             timerRemainingMillis = snapshot.timerDurationMillis,
             timerTargetEndMillis = 0L,
-            isTimerRunning = false
+            isTimerRunning = false,
+            completedLogged = false,
+            completedAcknowledged = true
         )
     }
 

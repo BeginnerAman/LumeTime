@@ -25,10 +25,12 @@ import com.lumetime.app.core.FocusTimerEngine
 import com.lumetime.app.core.PrecisionClockTicker
 import com.lumetime.app.core.ReminderScheduler
 import com.lumetime.app.core.TimeCalculator
+import com.lumetime.app.core.TimerAlertManager
 import com.lumetime.app.data.CountdownFilter
 import com.lumetime.app.data.CountdownSortMode
 import com.lumetime.app.data.CountdownStore
 import com.lumetime.app.data.FocusTimerStore
+import com.lumetime.app.data.PersonalProfilePrefs
 import com.lumetime.app.databinding.ActivityMainBinding
 import com.lumetime.app.model.CountdownCategory
 import com.lumetime.app.model.CountdownItem
@@ -41,6 +43,7 @@ import com.lumetime.app.ui.DateCalculatorDialog
 import com.lumetime.app.ui.FilterChipAdapter
 import com.lumetime.app.ui.FocusAnimations
 import com.lumetime.app.ui.FocusTimerDialog
+import com.lumetime.app.ui.PersonalizeDialog
 import com.lumetime.app.ui.ShareCardGenerator
 import com.lumetime.app.ui.ThemeManager
 import com.lumetime.app.ui.ThemePickerDialog
@@ -345,15 +348,12 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnBackup.setOnClickListener { view ->
             ThemeManager.performTapHaptic(view)
-            BackupDialog.show(
-                context = this,
-                palette = ThemeManager.getPalette(this),
-                countdownCount = allItems.size,
-                onExportClick = { exportBackupLauncher.launch("lumetime_backup.json") },
-                onRestoreClick = {
-                    importBackupLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
-                }
-            )
+            openPersonalizeSheet()
+        }
+
+        binding.greetingHeaderContainer.setOnClickListener { view ->
+            ThemeManager.performSoftTick(view)
+            openPersonalizeSheet()
         }
 
         binding.btnWidgetsStudio.setOnClickListener { view ->
@@ -370,9 +370,93 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnFocusTimerTool.setOnClickListener { view ->
             ThemeManager.performTapHaptic(view)
-            FocusTimerDialog.show(this, ThemeManager.getPalette(this)) {
-                updateQuickToolsBar(System.currentTimeMillis())
+            FocusTimerDialog.show(
+                context = this,
+                palette = ThemeManager.getPalette(this),
+                onStateChanged = {
+                    val now = System.currentTimeMillis()
+                    updateQuickToolsBar(now)
+                    updatePersonalizedHeader(now)
+                },
+                onRequestNotificationPermission = { ensureNotificationPermission() }
+            )
+        }
+
+        binding.cardLiveFocusBanner.setOnClickListener { view ->
+            ThemeManager.performSoftTick(view)
+            FocusTimerDialog.show(
+                context = this,
+                palette = ThemeManager.getPalette(this),
+                onStateChanged = {
+                    val now = System.currentTimeMillis()
+                    updateQuickToolsBar(now)
+                    updatePersonalizedHeader(now)
+                },
+                onRequestNotificationPermission = { ensureNotificationPermission() }
+            )
+        }
+
+        binding.btnLiveSessionPrimary.setOnClickListener { view ->
+            ThemeManager.performTapHaptic(view)
+            val now = System.currentTimeMillis()
+            var snap = FocusTimerStore.load(this)
+            snap = when {
+                !snap.completedAcknowledged && snap.timerRemainingMillis == 0L -> {
+                    snap.copy(
+                        timerRemainingMillis = snap.timerDurationMillis,
+                        timerTargetEndMillis = 0L,
+                        isTimerRunning = false,
+                        completedLogged = false,
+                        completedAcknowledged = true
+                    )
+                }
+                snap.activeTab == com.lumetime.app.core.FocusToolTab.STOPWATCH &&
+                    (snap.isStopwatchRunning || snap.stopwatchAccumulatedMillis > 0L) ->
+                    FocusTimerEngine.toggleStopwatch(snap, now)
+                else -> {
+                    val toggled = FocusTimerEngine.toggleTimer(snap, now)
+                    if (toggled.isTimerRunning) ensureNotificationPermission()
+                    toggled
+                }
             }
+            FocusTimerStore.save(this, snap)
+            TimerAlertManager.syncFocusAlarm(this, snap)
+            updateQuickToolsBar(now)
+        }
+
+        binding.btnLiveSessionSecondary.setOnClickListener { view ->
+            ThemeManager.performSoftTick(view)
+            val now = System.currentTimeMillis()
+            var snap = FocusTimerStore.load(this)
+            snap = if (!snap.completedAcknowledged && snap.timerRemainingMillis == 0L) {
+                ensureNotificationPermission()
+                val breakSnap = FocusTimerEngine.selectPreset(
+                    snap.copy(sessionLabel = "Short Break"),
+                    FocusTimerEngine.SHORT_BREAK_MILLIS
+                )
+                FocusTimerEngine.toggleTimer(breakSnap, now)
+            } else if (snap.isTimerRunning || snap.timerRemainingMillis < snap.timerDurationMillis) {
+                FocusTimerEngine.adjustMinutes(snap, 5, now)
+            } else {
+                FocusTimerEngine.recordLap(snap, now)
+            }
+            FocusTimerStore.save(this, snap)
+            TimerAlertManager.syncFocusAlarm(this, snap)
+            updateQuickToolsBar(now)
+        }
+
+        binding.btnLiveSessionDismiss.setOnClickListener { view ->
+            ThemeManager.performSoftTick(view)
+            val now = System.currentTimeMillis()
+            var snap = FocusTimerStore.load(this)
+            snap = if (snap.isStopwatchRunning || snap.stopwatchAccumulatedMillis > 0L) {
+                FocusTimerEngine.resetStopwatch(snap)
+            } else {
+                FocusTimerEngine.resetTimer(snap)
+            }
+            FocusTimerStore.save(this, snap)
+            TimerAlertManager.cancelFocusTimerAlarm(this)
+            updateQuickToolsBar(now)
         }
 
         binding.btnDateCalcTool.setOnClickListener { view ->
@@ -467,6 +551,30 @@ class MainActivity : AppCompatActivity() {
             reloadCountdowns(animateHeroRoll = false)
             WidgetScheduler.refreshAllWidgets(this)
         }
+    }
+
+    private fun openPersonalizeSheet() {
+        val palette = ThemeManager.getPalette(this)
+        PersonalizeDialog.show(
+            context = this,
+            palette = palette,
+            onSaved = {
+                val now = System.currentTimeMillis()
+                updatePersonalizedHeader(now)
+                updateYearPulse(now)
+            },
+            onOpenBackup = {
+                BackupDialog.show(
+                    context = this,
+                    palette = ThemeManager.getPalette(this),
+                    countdownCount = allItems.size,
+                    onExportClick = { exportBackupLauncher.launch("lumetime_backup.json") },
+                    onRestoreClick = {
+                        importBackupLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
+                    }
+                )
+            }
+        )
     }
 
     private fun openEditor(
@@ -705,9 +813,46 @@ class MainActivity : AppCompatActivity() {
         updateHeroCountdown(System.currentTimeMillis(), animateRoll = false)
     }
 
+    private fun updatePersonalizedHeader(now: Long) {
+        val profile = PersonalProfilePrefs.load(this, now)
+        val greeting = PersonalProfilePrefs.buildGreeting(
+            PersonalProfilePrefs.currentHour(now),
+            profile.userName
+        )
+        binding.tvBrandTitle.text = greeting
+        val dateText = headerDateFormat.format(Date(now))
+        binding.tvTodayDate.text = if (profile.dailyIntention.isNotBlank()) {
+            "${profile.dailyIntention} • ${profile.focusedMinutesToday}/${profile.dailyFocusGoalMinutes}m"
+        } else if (profile.focusedMinutesToday > 0) {
+            "$dateText • Focused ${profile.focusedMinutesToday}/${profile.dailyFocusGoalMinutes}m"
+        } else {
+            "$dateText • Goal ${profile.dailyFocusGoalMinutes}m"
+        }
+    }
+
     private fun updateQuickToolsBar(now: Long) {
-        val timerState = FocusTimerStore.load(this)
+        var timerState = FocusTimerStore.load(this)
         val palette = ThemeManager.getPalette(this)
+
+        // Detect completion even when FocusTimerDialog bottom sheet is closed!
+        if (timerState.isTimerRunning && FocusTimerEngine.isTimerCompleted(timerState, now)) {
+            val mins = ((timerState.timerDurationMillis + 30_000L) / 60_000L).toInt().coerceAtLeast(1)
+            if (!timerState.completedLogged) {
+                PersonalProfilePrefs.recordFocusSession(this, mins, now)
+                updatePersonalizedHeader(now)
+            }
+            timerState = timerState.copy(
+                isTimerRunning = false,
+                timerRemainingMillis = 0L,
+                timerTargetEndMillis = 0L,
+                completedLogged = true,
+                completedAcknowledged = false
+            )
+            FocusTimerStore.save(this, timerState)
+            TimerAlertManager.cancelFocusTimerAlarm(this)
+            TimerAlertManager.playCompletionChimeAndVibrate(this)
+        }
+
         if (timerState.isTimerRunning) {
             val rem = FocusTimerEngine.remainingTimerMillis(timerState, now)
             binding.tvFocusToolLabel.text = "Focus ${FocusTimerEngine.formatMmSs(rem)}"
@@ -719,6 +864,70 @@ class MainActivity : AppCompatActivity() {
         } else {
             binding.tvFocusToolLabel.text = getString(R.string.quick_focus_label)
             binding.btnFocusTimerTool.background = ThemeManager.pillDrawable(this, palette)
+        }
+
+        val timerPausedMid = !timerState.isTimerRunning &&
+            timerState.timerRemainingMillis in 1L until timerState.timerDurationMillis
+        val justFinished = !timerState.completedAcknowledged && timerState.timerRemainingMillis == 0L
+        val stopwatchActive = timerState.isStopwatchRunning || timerState.stopwatchAccumulatedMillis > 0L
+
+        if (timerState.isTimerRunning || timerPausedMid || justFinished || stopwatchActive) {
+            binding.cardLiveFocusBanner.visibility = View.VISIBLE
+            val bannerAccent = if (justFinished) palette.urgentCoral else palette.accent
+            binding.cardLiveFocusBanner.background = ThemeManager.accentedCardDrawable(
+                this,
+                palette,
+                bannerAccent,
+                isHero = false
+            )
+            binding.tvLiveSessionStatus.setTextColor(bannerAccent)
+            binding.tvLiveSessionTime.setTextColor(palette.textPrimary)
+            binding.btnLiveSessionSecondary.background = ThemeManager.pillDrawable(this, palette)
+            binding.btnLiveSessionSecondary.setTextColor(palette.accent)
+            binding.btnLiveSessionDismiss.background = ThemeManager.pillDrawable(this, palette)
+            binding.btnLiveSessionDismiss.setTextColor(palette.textSecondary)
+            binding.btnLiveSessionPrimary.background = ThemeManager.fabDrawable(this, palette)
+            binding.pbLiveSession.setColors(
+                track = palette.progressTrack,
+                accentStart = ThemeManager.withAlpha(bannerAccent, 0xCC),
+                accentEnd = bannerAccent
+            )
+
+            when {
+                justFinished -> {
+                    binding.tvLiveSessionStatus.text = "TIME'S UP • ${timerState.sessionLabel.uppercase(Locale.US)} COMPLETE"
+                    binding.tvLiveSessionTime.text = "00:00"
+                    binding.btnLiveSessionPrimary.text = "Log & OK"
+                    binding.btnLiveSessionSecondary.text = "5m Break"
+                    binding.btnLiveSessionDismiss.text = "Reset"
+                    binding.pbLiveSession.visibility = View.VISIBLE
+                    binding.pbLiveSession.setProgress(1f)
+                }
+                timerState.isTimerRunning || timerPausedMid -> {
+                    val rem = FocusTimerEngine.remainingTimerMillis(timerState, now)
+                    val stateWord = if (timerState.isTimerRunning) "FOCUSING" else "PAUSED"
+                    binding.tvLiveSessionStatus.text = "$stateWord • ${timerState.sessionLabel.uppercase(Locale.US)}"
+                    binding.tvLiveSessionTime.text = FocusTimerEngine.formatMmSs(rem)
+                    binding.btnLiveSessionPrimary.text = if (timerState.isTimerRunning) "Pause" else "Resume"
+                    binding.btnLiveSessionSecondary.text = "+5m"
+                    binding.btnLiveSessionDismiss.text = "Reset"
+                    binding.pbLiveSession.visibility = View.VISIBLE
+                    binding.pbLiveSession.setProgress(FocusTimerEngine.timerProgressFraction(timerState, now))
+                }
+                else -> {
+                    val elapsed = FocusTimerEngine.elapsedStopwatchMillis(timerState, now)
+                    binding.tvLiveSessionStatus.text =
+                        if (timerState.isStopwatchRunning) "STOPWATCH • LIVE" else "STOPWATCH • PAUSED"
+                    binding.tvLiveSessionTime.text = FocusTimerEngine.formatStopwatch(elapsed)
+                    binding.btnLiveSessionPrimary.text =
+                        if (timerState.isStopwatchRunning) "Pause" else "Resume"
+                    binding.btnLiveSessionSecondary.text = "Lap"
+                    binding.btnLiveSessionDismiss.text = "Reset"
+                    binding.pbLiveSession.visibility = View.GONE
+                }
+            }
+        } else {
+            binding.cardLiveFocusBanner.visibility = View.GONE
         }
     }
 
@@ -737,7 +946,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateYearPulse(now: Long) {
-        binding.tvTodayDate.text = headerDateFormat.format(Date(now))
+        updatePersonalizedHeader(now)
         if (activePulseScope == TimePulseScope.YEAR) {
             val yearProgress = TimeCalculator.computeYearProgress(now)
             val display = YearDisplayFormatter.format(yearProgress, metricMode, now)
@@ -756,7 +965,12 @@ class MainActivity : AppCompatActivity() {
             binding.yearDotMatrix.setData(yearProgress.totalDays, yearProgress.todayDayOfYear)
             binding.yearProgressBar.setProgress(yearProgress.progressFraction)
         } else {
-            val period = TimeCalculator.computePeriodProgress(activePulseScope, now)
+            val profile = PersonalProfilePrefs.load(this, now)
+            val period = if (activePulseScope == TimePulseScope.TODAY && profile.useAwakeDayForTodayPulse) {
+                TimeCalculator.computeAwakeDayProgress(now, profile.wakeHour, profile.sleepHour)
+            } else {
+                TimeCalculator.computePeriodProgress(activePulseScope, now)
+            }
             binding.tvYearPulseTitle.text = period.title
             binding.tvDayOfYearBadge.text = period.badgeText
             if (metricMode == YearPulseMetricMode.PERCENT_DONE) {

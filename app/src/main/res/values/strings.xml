@@ -67,4 +67,9 @@
     <string name="reset_streak_label">Restart Streak from Now</string>
     <string name="widget_pulse_grid_desc">LumeTime 4-in-1 Time Pulse (Day, Week, Month, Year)</string>
     <string name="configure_hero_widget_title">Widget Countdown</string>
+    <string name="personalize_title">Personalize LumeTime</string>
+    <string name="personalize_subtitle">Your name, daily focus goal, waking schedule &amp; alerts</string>
+    <string name="personalize_desc">Personalize</string>
+    <string name="your_name_hint">Your name (e.g. Aman)</string>
+    <string name="daily_intention_hint">Daily intention (e.g. Deep prep for finals)</string>
 </resources>

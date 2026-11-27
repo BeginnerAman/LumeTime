@@ -454,6 +454,102 @@ object TimeCalculator {
         }
     }
 
+    /**
+     * Computes Today Pulse progress strictly within the user's personalized waking window
+     * ([wakeHour]:00 to [sleepHour]:00) so daily progress reflects actionable waking hours.
+     */
+    fun computeAwakeDayProgress(
+        nowMillis: Long,
+        wakeHour: Int,
+        sleepHour: Int,
+        timeZone: TimeZone = TimeZone.getDefault()
+    ): PeriodProgress {
+        val safeWake = wakeHour.coerceIn(0, 22)
+        val safeSleep = sleepHour.coerceIn(safeWake + 1, 23)
+        val totalWindowHours = (safeSleep - safeWake).coerceAtLeast(1)
+
+        val wakeCal = Calendar.getInstance(timeZone).apply {
+            timeInMillis = nowMillis
+            resetToMidnight(this)
+            set(Calendar.HOUR_OF_DAY, safeWake)
+        }
+        val sleepCal = Calendar.getInstance(timeZone).apply {
+            timeInMillis = nowMillis
+            resetToMidnight(this)
+            set(Calendar.HOUR_OF_DAY, safeSleep)
+        }
+
+        val wakeMillis = wakeCal.timeInMillis
+        val sleepMillis = sleepCal.timeInMillis
+        val windowMillis = (sleepMillis - wakeMillis).coerceAtLeast(1L)
+        val elapsedMillis = (nowMillis - wakeMillis).coerceIn(0L, windowMillis)
+        val remainingMillis = (sleepMillis - nowMillis).coerceAtLeast(0L)
+        val fraction = (elapsedMillis.toDouble() / windowMillis.toDouble()).toFloat().coerceIn(0f, 1f)
+
+        val currentHour = Calendar.getInstance(timeZone).apply { timeInMillis = nowMillis }
+            .get(Calendar.HOUR_OF_DAY)
+        val elapsedUnits = (currentHour - safeWake).coerceIn(0, totalWindowHours - 1)
+        val activeUnit = (elapsedUnits + 1).coerceIn(1, totalWindowHours)
+
+        val remHours = remainingMillis / MILLIS_PER_HOUR
+        val remMins = ((remainingMillis % MILLIS_PER_HOUR) / MILLIS_PER_MINUTE).toInt()
+        val remSecs = ((remainingMillis % MILLIS_PER_MINUTE) / MILLIS_PER_SECOND).toInt()
+
+        val summaryLeft: String
+        val unitLabel: String
+        val liveFooter: String
+        when {
+            nowMillis < wakeMillis -> {
+                val untilWake = wakeMillis - nowMillis
+                val h = untilWake / MILLIS_PER_HOUR
+                val m = ((untilWake % MILLIS_PER_HOUR) / MILLIS_PER_MINUTE).toInt()
+                summaryLeft = String.format(Locale.US, "%dh %02dm", h, m)
+                unitLabel = "until day starts"
+                liveFooter = "Active window ${formatHourShort(safeWake)} – ${formatHourShort(safeSleep)}"
+            }
+            nowMillis >= sleepMillis -> {
+                summaryLeft = "Done"
+                unitLabel = "wind down"
+                liveFooter = "Waking hours complete (${formatHourShort(safeWake)} – ${formatHourShort(safeSleep)})"
+            }
+            else -> {
+                summaryLeft = String.format(Locale.US, "%dh %02dm", remHours, remMins)
+                unitLabel = "awake left"
+                liveFooter = String.format(
+                    Locale.US,
+                    "%02dh %02dm %02ds until %s",
+                    remHours,
+                    remMins,
+                    remSecs,
+                    formatHourShort(safeSleep)
+                )
+            }
+        }
+
+        return PeriodProgress(
+            scope = TimePulseScope.TODAY,
+            title = "ACTIVE DAY • ${formatHourShort(safeWake)}–${formatHourShort(safeSleep)}",
+            badgeText = "Hr $activeUnit / $totalWindowHours",
+            progressFraction = fraction,
+            percentCompleted = fraction * 100f,
+            remainingMillis = remainingMillis,
+            elapsedUnits = elapsedUnits,
+            totalUnits = totalWindowHours,
+            activeUnitOneBased = activeUnit,
+            summaryLeft = summaryLeft,
+            unitLabel = unitLabel,
+            subtitle = String.format(Locale.US, "%.1f%% of your waking day passed", fraction * 100f),
+            liveFooter = liveFooter
+        )
+    }
+
+    private fun formatHourShort(hour24: Int): String {
+        val h = hour24 % 12
+        val label = if (h == 0) 12 else h
+        val amPm = if (hour24 < 12) "AM" else "PM"
+        return "$label $amPm"
+    }
+
     private fun resetToMidnight(cal: Calendar) {
         cal.set(Calendar.HOUR_OF_DAY, 0)
         cal.set(Calendar.MINUTE, 0)
