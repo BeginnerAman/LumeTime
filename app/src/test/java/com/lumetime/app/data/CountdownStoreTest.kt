@@ -133,7 +133,7 @@ class CountdownStoreTest {
     @Test
     fun `exportJson and importJson merge items and preserve single pin`() {
         val now = 1_795_000_000_000L
-        val fileA = File(tempFolder.root, "a.json")
+        val fileA = File(tempFolder.root, "a.json").apply { writeText("[]") }
         val storeA = CountdownStore(fileA)
         storeA.upsert(CountdownItem("1", "First", now + 10_000L, now, isPinned = true))
 

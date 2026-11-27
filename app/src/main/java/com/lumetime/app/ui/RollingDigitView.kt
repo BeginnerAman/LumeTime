@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.util.AttributeSet
+import android.util.TypedValue
 import android.view.View
 import android.view.animation.DecelerateInterpolator
 
@@ -52,7 +53,11 @@ class RollingDigitView @JvmOverloads constructor(
         textColor = text
         bgPaint.color = bgColor
         strokePaint.color = strokeColor
-        textPaint.textSize = textSizeSp * resources.displayMetrics.scaledDensity
+        textPaint.textSize = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_SP,
+            textSizeSp,
+            resources.displayMetrics
+        )
         invalidate()
     }
 

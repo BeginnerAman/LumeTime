@@ -140,12 +140,13 @@ class CountdownStore(
 
         val current = ensureLoadedLocked().toMutableList()
         val byId = current.associateBy { it.id }.toMutableMap()
-        val hasExistingPin = current.any { it.isPinned }
+        var hasExistingPin = current.any { it.isPinned }
 
         incoming.forEach { item ->
             val normalized = if (hasExistingPin && item.isPinned && byId[item.id]?.isPinned != true) {
                 item.copy(isPinned = false)
             } else {
+                if (item.isPinned) hasExistingPin = true
                 item
             }
             byId[normalized.id] = normalized
