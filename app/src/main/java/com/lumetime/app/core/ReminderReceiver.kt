@@ -76,7 +76,4 @@ class ReminderReceiver : BroadcastReceiver() {
             }
         }
     }
-
-        // No duplicate scheduling here; AlarmManager notifications fire directly via TimerAlertManager.ALERTS_CHANNEL_ID.
-    }
 }
