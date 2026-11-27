@@ -85,6 +85,10 @@ class HeroWidgetProvider : AppWidgetProvider() {
                     views.setProgressBar(R.id.pbWidgetHero, 1000, 0, false)
                 } else {
                     val breakdown = TimeCalculator.calculateBreakdown(hero, now)
+                    val heroAccent = runCatching {
+                        android.graphics.Color.parseColor(hero.accentHex)
+                    }.getOrDefault(accentText)
+                    val activeColor = if (breakdown.isExpired) secondaryText else heroAccent
                     val launchIntent = FocusClockActivity.createIntent(context, hero.id)
                     val clickPending = PendingIntent.getActivity(
                         context,
@@ -95,7 +99,7 @@ class HeroWidgetProvider : AppWidgetProvider() {
                     views.setOnClickPendingIntent(R.id.widgetHeroRoot, clickPending)
 
                     views.setImageViewResource(R.id.ivWidgetHeroIcon, hero.resolveIcon().drawableRes)
-                    views.setInt(R.id.ivWidgetHeroIcon, "setColorFilter", accentText)
+                    views.setInt(R.id.ivWidgetHeroIcon, "setColorFilter", activeColor)
                     views.setTextViewText(
                         R.id.tvWidgetHeroTag,
                         when {
@@ -104,7 +108,7 @@ class HeroWidgetProvider : AppWidgetProvider() {
                             else -> "UP NEXT"
                         }
                     )
-                    views.setTextColor(R.id.tvWidgetHeroTag, accentText)
+                    views.setTextColor(R.id.tvWidgetHeroTag, activeColor)
 
                     views.setTextViewText(R.id.tvWidgetHeroTitle, hero.title)
                     views.setTextColor(R.id.tvWidgetHeroTitle, primaryText)
@@ -144,7 +148,7 @@ class HeroWidgetProvider : AppWidgetProvider() {
                             views.setViewVisibility(R.id.widgetHeroChrono, View.VISIBLE)
                             views.setChronometerCountDown(R.id.widgetHeroChrono, !breakdown.isCountUp)
                             views.setChronometer(R.id.widgetHeroChrono, base, null, true)
-                            views.setTextColor(R.id.widgetHeroChrono, accentText)
+                            views.setTextColor(R.id.widgetHeroChrono, activeColor)
                         } else {
                             views.setViewVisibility(R.id.widgetHeroChrono, View.GONE)
                         }

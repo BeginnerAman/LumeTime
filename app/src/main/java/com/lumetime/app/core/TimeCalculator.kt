@@ -2,11 +2,16 @@ package com.lumetime.app.core
 
 import com.lumetime.app.model.CountdownItem
 import com.lumetime.app.model.CountdownMode
+import com.lumetime.app.model.PeriodProgress
 import com.lumetime.app.model.RepeatRule
 import com.lumetime.app.model.TimeBreakdown
+import com.lumetime.app.model.TimePulseScope
 import com.lumetime.app.model.YearProgress
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
 import java.util.GregorianCalendar
+import java.util.Locale
 import java.util.TimeZone
 
 /**
@@ -244,5 +249,215 @@ object TimeCalculator {
         val maxDay = shifted.getActualMaximum(Calendar.DAY_OF_MONTH)
         shifted.set(Calendar.DAY_OF_MONTH, anchorDay.coerceAtMost(maxDay))
         return shifted.timeInMillis
+    }
+
+    /**
+     * Computes progress and remaining breakdown across Today, This Week, This Month, or This Year.
+     */
+    fun computePeriodProgress(
+        scope: TimePulseScope,
+        nowMillis: Long,
+        timeZone: TimeZone = TimeZone.getDefault()
+    ): PeriodProgress {
+        if (scope == TimePulseScope.YEAR) {
+            val yp = computeYearProgress(nowMillis, timeZone)
+            val nextJan1 = startOfYearMillis(yp.year + 1, timeZone)
+            val remMillis = (nextJan1 - nowMillis).coerceAtLeast(0L)
+            val remDays = remMillis / MILLIS_PER_DAY
+            val remHours = ((remMillis % MILLIS_PER_DAY) / MILLIS_PER_HOUR).toInt()
+            val remMins = ((remMillis % MILLIS_PER_HOUR) / MILLIS_PER_MINUTE).toInt()
+            val remSecs = ((remMillis % MILLIS_PER_MINUTE) / MILLIS_PER_SECOND).toInt()
+            return PeriodProgress(
+                scope = TimePulseScope.YEAR,
+                title = "${yp.year} • YEAR PULSE",
+                badgeText = "Day ${yp.todayDayOfYear} / ${yp.totalDays}",
+                progressFraction = yp.progressFraction,
+                percentCompleted = yp.percentCompleted,
+                remainingMillis = remMillis,
+                elapsedUnits = yp.daysPassed,
+                totalUnits = yp.totalDays,
+                activeUnitOneBased = yp.todayDayOfYear,
+                summaryLeft = "${yp.daysLeft}",
+                unitLabel = if (yp.daysLeft == 1L) "day left" else "days left",
+                subtitle = String.format(
+                    Locale.US,
+                    "%,d hours remaining • %.1f%% passed",
+                    yp.hoursLeft,
+                    yp.percentCompleted
+                ),
+                liveFooter = String.format(
+                    Locale.US,
+                    "%dd %02dh %02dm %02ds until %d",
+                    remDays,
+                    remHours,
+                    remMins,
+                    remSecs,
+                    yp.year + 1
+                )
+            )
+        }
+
+        val nowCal = Calendar.getInstance(timeZone).apply { timeInMillis = nowMillis }
+        val startCal = Calendar.getInstance(timeZone).apply { timeInMillis = nowMillis }
+        val endCal = Calendar.getInstance(timeZone)
+
+        when (scope) {
+            TimePulseScope.TODAY -> {
+                resetToMidnight(startCal)
+                endCal.timeInMillis = startCal.timeInMillis
+                endCal.add(Calendar.DAY_OF_YEAR, 1)
+
+                val totalMillis = (endCal.timeInMillis - startCal.timeInMillis).coerceAtLeast(1L)
+                val elapsedMillis = (nowMillis - startCal.timeInMillis).coerceIn(0L, totalMillis)
+                val remMillis = (endCal.timeInMillis - nowMillis).coerceAtLeast(0L)
+                val fraction = (elapsedMillis.toDouble() / totalMillis.toDouble()).toFloat().coerceIn(0f, 1f)
+                val hourOfDay = nowCal.get(Calendar.HOUR_OF_DAY).coerceIn(0, 23)
+                val remHours = remMillis / MILLIS_PER_HOUR
+                val remMins = ((remMillis % MILLIS_PER_HOUR) / MILLIS_PER_MINUTE).toInt()
+                val remSecs = ((remMillis % MILLIS_PER_MINUTE) / MILLIS_PER_SECOND).toInt()
+                val elapsedMins = elapsedMillis / MILLIS_PER_MINUTE
+
+                return PeriodProgress(
+                    scope = TimePulseScope.TODAY,
+                    title = "TODAY PULSE",
+                    badgeText = "Hour ${hourOfDay + 1} / 24",
+                    progressFraction = fraction,
+                    percentCompleted = fraction * 100f,
+                    remainingMillis = remMillis,
+                    elapsedUnits = hourOfDay,
+                    totalUnits = 24,
+                    activeUnitOneBased = hourOfDay + 1,
+                    summaryLeft = String.format(Locale.US, "%dh %02dm", remHours, remMins),
+                    unitLabel = "left today",
+                    subtitle = String.format(
+                        Locale.US,
+                        "%.1f%% of today done • %dh %dm passed",
+                        fraction * 100f,
+                        elapsedMins / 60L,
+                        elapsedMins % 60L
+                    ),
+                    liveFooter = String.format(
+                        Locale.US,
+                        "%02dh %02dm %02ds until midnight",
+                        remHours,
+                        remMins,
+                        remSecs
+                    )
+                )
+            }
+
+            TimePulseScope.WEEK -> {
+                resetToMidnight(startCal)
+                val dayOfWeek = startCal.get(Calendar.DAY_OF_WEEK)
+                val daysSinceMonday = when (dayOfWeek) {
+                    Calendar.MONDAY -> 0
+                    Calendar.TUESDAY -> 1
+                    Calendar.WEDNESDAY -> 2
+                    Calendar.THURSDAY -> 3
+                    Calendar.FRIDAY -> 4
+                    Calendar.SATURDAY -> 5
+                    else -> 6
+                }
+                startCal.add(Calendar.DAY_OF_YEAR, -daysSinceMonday)
+                endCal.timeInMillis = startCal.timeInMillis
+                endCal.add(Calendar.DAY_OF_YEAR, 7)
+
+                val totalMillis = (endCal.timeInMillis - startCal.timeInMillis).coerceAtLeast(1L)
+                val elapsedMillis = (nowMillis - startCal.timeInMillis).coerceIn(0L, totalMillis)
+                val remMillis = (endCal.timeInMillis - nowMillis).coerceAtLeast(0L)
+                val fraction = (elapsedMillis.toDouble() / totalMillis.toDouble()).toFloat().coerceIn(0f, 1f)
+                val dayIndex = (daysSinceMonday + 1).coerceIn(1, 7)
+                val remDays = remMillis / MILLIS_PER_DAY
+                val remHours = ((remMillis % MILLIS_PER_DAY) / MILLIS_PER_HOUR).toInt()
+                val remMins = ((remMillis % MILLIS_PER_HOUR) / MILLIS_PER_MINUTE).toInt()
+                val remSecs = ((remMillis % MILLIS_PER_MINUTE) / MILLIS_PER_SECOND).toInt()
+
+                return PeriodProgress(
+                    scope = TimePulseScope.WEEK,
+                    title = "WEEK PULSE",
+                    badgeText = "Day $dayIndex / 7",
+                    progressFraction = fraction,
+                    percentCompleted = fraction * 100f,
+                    remainingMillis = remMillis,
+                    elapsedUnits = daysSinceMonday,
+                    totalUnits = 7,
+                    activeUnitOneBased = dayIndex,
+                    summaryLeft = "${remDays}d ${remHours}h",
+                    unitLabel = "left in week",
+                    subtitle = String.format(
+                        Locale.US,
+                        "%.1f%% of this week passed • %d days done",
+                        fraction * 100f,
+                        daysSinceMonday
+                    ),
+                    liveFooter = String.format(
+                        Locale.US,
+                        "%dd %02dh %02dm %02ds until Monday",
+                        remDays,
+                        remHours,
+                        remMins,
+                        remSecs
+                    )
+                )
+            }
+
+            TimePulseScope.MONTH -> {
+                resetToMidnight(startCal)
+                startCal.set(Calendar.DAY_OF_MONTH, 1)
+                endCal.timeInMillis = startCal.timeInMillis
+                endCal.add(Calendar.MONTH, 1)
+
+                val totalDays = nowCal.getActualMaximum(Calendar.DAY_OF_MONTH)
+                val dayOfMonth = nowCal.get(Calendar.DAY_OF_MONTH).coerceIn(1, totalDays)
+                val totalMillis = (endCal.timeInMillis - startCal.timeInMillis).coerceAtLeast(1L)
+                val elapsedMillis = (nowMillis - startCal.timeInMillis).coerceIn(0L, totalMillis)
+                val remMillis = (endCal.timeInMillis - nowMillis).coerceAtLeast(0L)
+                val fraction = (elapsedMillis.toDouble() / totalMillis.toDouble()).toFloat().coerceIn(0f, 1f)
+                val remDays = remMillis / MILLIS_PER_DAY
+                val remHours = ((remMillis % MILLIS_PER_DAY) / MILLIS_PER_HOUR).toInt()
+                val remMins = ((remMillis % MILLIS_PER_HOUR) / MILLIS_PER_MINUTE).toInt()
+                val remSecs = ((remMillis % MILLIS_PER_MINUTE) / MILLIS_PER_SECOND).toInt()
+                val monthName = SimpleDateFormat("MMMM", Locale.US).apply {
+                    this.timeZone = timeZone
+                }.format(Date(nowMillis)).uppercase(Locale.US)
+
+                return PeriodProgress(
+                    scope = TimePulseScope.MONTH,
+                    title = "$monthName PULSE",
+                    badgeText = "Day $dayOfMonth / $totalDays",
+                    progressFraction = fraction,
+                    percentCompleted = fraction * 100f,
+                    remainingMillis = remMillis,
+                    elapsedUnits = (dayOfMonth - 1).coerceAtLeast(0),
+                    totalUnits = totalDays,
+                    activeUnitOneBased = dayOfMonth,
+                    summaryLeft = "$remDays",
+                    unitLabel = if (remDays == 1L) "day left" else "days left",
+                    subtitle = String.format(
+                        Locale.US,
+                        "%.1f%% of month done • %,d hours left",
+                        fraction * 100f,
+                        remMillis / MILLIS_PER_HOUR
+                    ),
+                    liveFooter = String.format(
+                        Locale.US,
+                        "%dd %02dh %02dm %02ds until next month",
+                        remDays,
+                        remHours,
+                        remMins,
+                        remSecs
+                    )
+                )
+            }
+
+            TimePulseScope.YEAR -> error("Handled above")
+        }
+    }
+
+    private fun resetToMidnight(cal: Calendar) {
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
     }
 }

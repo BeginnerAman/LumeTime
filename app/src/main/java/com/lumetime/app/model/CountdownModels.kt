@@ -85,3 +85,32 @@ data class YearProgress(
     val progressFraction: Float,
     val percentCompleted: Float
 )
+
+/**
+ * Scope options for the interactive Time Pulse card.
+ */
+enum class TimePulseScope(val label: String) {
+    TODAY("Today"),
+    WEEK("Week"),
+    MONTH("Month"),
+    YEAR("Year")
+}
+
+/**
+ * Computed progress and remaining breakdown for Day, Week, Month, or Year scope.
+ */
+data class PeriodProgress(
+    val scope: TimePulseScope,
+    val title: String,
+    val badgeText: String,
+    val progressFraction: Float,
+    val percentCompleted: Float,
+    val remainingMillis: Long,
+    val elapsedUnits: Int,
+    val totalUnits: Int,
+    val activeUnitOneBased: Int,
+    val summaryLeft: String,
+    val unitLabel: String,
+    val subtitle: String,
+    val liveFooter: String
+)

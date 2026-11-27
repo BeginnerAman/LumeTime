@@ -54,4 +54,10 @@
     <string name="backup_subtitle">Export or import your countdowns as a lightweight JSON file</string>
     <string name="export_backup_btn">Export JSON Backup</string>
     <string name="restore_backup_btn">Restore from JSON</string>
+    <string name="card_accent_label">Card Accent Color</string>
+    <string name="accent_preview_badge">Live Tint</string>
+    <string name="pulse_today">Today</string>
+    <string name="pulse_week">Week</string>
+    <string name="pulse_month">Month</string>
+    <string name="pulse_year">Year</string>
 </resources>

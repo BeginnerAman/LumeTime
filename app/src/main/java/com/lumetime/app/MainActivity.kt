@@ -30,6 +30,7 @@ import com.lumetime.app.data.CountdownStore
 import com.lumetime.app.databinding.ActivityMainBinding
 import com.lumetime.app.model.CountdownCategory
 import com.lumetime.app.model.CountdownItem
+import com.lumetime.app.model.TimePulseScope
 import com.lumetime.app.ui.BackupDialog
 import com.lumetime.app.ui.CountdownAdapter
 import com.lumetime.app.ui.CountdownDisplayFormat
@@ -114,6 +115,7 @@ class MainActivity : AppCompatActivity() {
     private var sortMode: CountdownSortMode = CountdownSortMode.SOONEST
     private var displayFormat: CountdownDisplayFormat = CountdownDisplayFormat.DAYS_HOURS
     private var metricMode: YearPulseMetricMode = YearPulseMetricMode.DAYS_LEFT
+    private var activePulseScope: TimePulseScope = TimePulseScope.YEAR
     private var yearDotsExpanded: Boolean = false
     private var searchVisible: Boolean = false
     private var searchQuery: String = ""
@@ -163,9 +165,18 @@ class MainActivity : AppCompatActivity() {
             displayFormat = CountdownDisplayFormat.entries.getOrElse(savedFormat) {
                 CountdownDisplayFormat.DAYS_HOURS
             }
+            val savedScope = savedInstanceState.getInt(KEY_PULSE_SCOPE, TimePulseScope.YEAR.ordinal)
+            activePulseScope = TimePulseScope.entries.getOrElse(savedScope) {
+                TimePulseScope.YEAR
+            }
             yearDotsExpanded = savedInstanceState.getBoolean(KEY_DOTS_EXPANDED, false)
             searchVisible = savedInstanceState.getBoolean(KEY_SEARCH_VISIBLE, false)
             searchQuery = savedInstanceState.getString(KEY_SEARCH_QUERY, "")
+        } else {
+            val savedScopeName = getSharedPreferences("lumetime_ui_prefs", MODE_PRIVATE)
+                .getString(KEY_PULSE_SCOPE, TimePulseScope.YEAR.name)
+            activePulseScope = TimePulseScope.entries.firstOrNull { it.name == savedScopeName }
+                ?: TimePulseScope.YEAR
         }
 
         store = CountdownStore.create(this)
@@ -204,6 +215,7 @@ class MainActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(KEY_METRIC_MODE, metricMode.ordinal)
+        outState.putInt(KEY_PULSE_SCOPE, activePulseScope.ordinal)
         outState.putInt(KEY_SORT_MODE, sortMode.ordinal)
         outState.putInt(KEY_DISPLAY_FORMAT, displayFormat.ordinal)
         outState.putBoolean(KEY_DOTS_EXPANDED, yearDotsExpanded)
@@ -350,6 +362,26 @@ class MainActivity : AppCompatActivity() {
             metricMode = metricMode.next()
             animateMetricSwitch()
             updateYearPulse(System.currentTimeMillis())
+        }
+
+        listOf(
+            binding.btnScopeToday to TimePulseScope.TODAY,
+            binding.btnScopeWeek to TimePulseScope.WEEK,
+            binding.btnScopeMonth to TimePulseScope.MONTH,
+            binding.btnScopeYear to TimePulseScope.YEAR
+        ).forEach { (btn, scope) ->
+            btn.setOnClickListener { view ->
+                if (activePulseScope == scope) return@setOnClickListener
+                ThemeManager.performSoftTick(view)
+                activePulseScope = scope
+                getSharedPreferences("lumetime_ui_prefs", MODE_PRIVATE)
+                    .edit()
+                    .putString(KEY_PULSE_SCOPE, scope.name)
+                    .apply()
+                stylePulseScopeButtons(ThemeManager.getPalette(this))
+                animateMetricSwitch()
+                updateYearPulse(System.currentTimeMillis())
+            }
         }
 
         binding.btnShareYearPulse.setOnClickListener { view ->
@@ -564,6 +596,7 @@ class MainActivity : AppCompatActivity() {
         binding.btnToggleYearDots.setTextColor(palette.accent)
         binding.btnShareYearPulse.background = ThemeManager.pillDrawable(this, palette)
         binding.btnShareYearPulse.setColorFilter(palette.accent)
+        stylePulseScopeButtons(palette)
         binding.tvYearPrimaryValue.setTextColor(palette.textPrimary)
         binding.tvYearPrimaryUnit.setTextColor(palette.textSecondary)
         binding.tvYearSecondaryCaption.setTextColor(palette.textSecondary)
@@ -626,25 +659,57 @@ class MainActivity : AppCompatActivity() {
         updateHeroCountdown(System.currentTimeMillis(), animateRoll = false)
     }
 
+    private fun stylePulseScopeButtons(palette: ThemeManager.ThemePalette) {
+        binding.pulseScopeContainer.background = ThemeManager.pillDrawable(this, palette)
+        listOf(
+            binding.btnScopeToday to TimePulseScope.TODAY,
+            binding.btnScopeWeek to TimePulseScope.WEEK,
+            binding.btnScopeMonth to TimePulseScope.MONTH,
+            binding.btnScopeYear to TimePulseScope.YEAR
+        ).forEach { (btn, scope) ->
+            val selected = activePulseScope == scope
+            btn.background = if (selected) ThemeManager.activeChipDrawable(this, palette) else null
+            btn.setTextColor(if (selected) Color.WHITE else palette.textSecondary)
+        }
+    }
+
     private fun updateYearPulse(now: Long) {
-        val yearProgress = TimeCalculator.computeYearProgress(now)
-        val display = YearDisplayFormatter.format(yearProgress, metricMode, now)
-
         binding.tvTodayDate.text = headerDateFormat.format(Date(now))
-        binding.tvYearPulseTitle.text = String.format(
-            Locale.US,
-            "%d • %s",
-            yearProgress.year,
-            getString(R.string.year_pulse_badge)
-        )
-        binding.tvDayOfYearBadge.text = display.dayOfYearBadge
-        binding.tvYearPrimaryValue.text = display.primaryValue
-        binding.tvYearPrimaryUnit.text = display.primaryUnit
-        binding.tvYearSecondaryCaption.text = display.secondaryCaption
-        binding.tvYearLiveFooter.text = display.liveFooter
+        if (activePulseScope == TimePulseScope.YEAR) {
+            val yearProgress = TimeCalculator.computeYearProgress(now)
+            val display = YearDisplayFormatter.format(yearProgress, metricMode, now)
+            binding.tvYearPulseTitle.text = String.format(
+                Locale.US,
+                "%d • %s",
+                yearProgress.year,
+                getString(R.string.year_pulse_badge)
+            )
+            binding.tvDayOfYearBadge.text = display.dayOfYearBadge
+            binding.tvYearPrimaryValue.text = display.primaryValue
+            binding.tvYearPrimaryUnit.text = display.primaryUnit
+            binding.tvYearSecondaryCaption.text = display.secondaryCaption
+            binding.tvYearLiveFooter.text = display.liveFooter
 
-        binding.yearDotMatrix.setData(yearProgress.totalDays, yearProgress.todayDayOfYear)
-        binding.yearProgressBar.setProgress(yearProgress.progressFraction)
+            binding.yearDotMatrix.setData(yearProgress.totalDays, yearProgress.todayDayOfYear)
+            binding.yearProgressBar.setProgress(yearProgress.progressFraction)
+        } else {
+            val period = TimeCalculator.computePeriodProgress(activePulseScope, now)
+            binding.tvYearPulseTitle.text = period.title
+            binding.tvDayOfYearBadge.text = period.badgeText
+            if (metricMode == YearPulseMetricMode.PERCENT_DONE) {
+                binding.tvYearPrimaryValue.text =
+                    String.format(Locale.US, "%.1f%%", period.percentCompleted)
+                binding.tvYearPrimaryUnit.text = "completed"
+            } else {
+                binding.tvYearPrimaryValue.text = period.summaryLeft
+                binding.tvYearPrimaryUnit.text = period.unitLabel
+            }
+            binding.tvYearSecondaryCaption.text = period.subtitle
+            binding.tvYearLiveFooter.text = period.liveFooter
+
+            binding.yearDotMatrix.setData(period.totalUnits, period.activeUnitOneBased)
+            binding.yearProgressBar.setProgress(period.progressFraction)
+        }
     }
 
     private fun updateHeroCountdown(now: Long, animateRoll: Boolean) {
@@ -663,6 +728,17 @@ class MainActivity : AppCompatActivity() {
         val palette = ThemeManager.getPalette(this)
         val breakdown = TimeCalculator.calculateBreakdown(item, now)
         val itemAccent = runCatching { Color.parseColor(item.accentHex) }.getOrDefault(palette.accent)
+        val heroTint = if (breakdown.isExpired) palette.textTertiary else itemAccent
+
+        binding.cardHeroCountdown.background = ThemeManager.accentedCardDrawable(
+            context = this,
+            palette = palette,
+            accentColor = itemAccent,
+            isHero = true
+        )
+        binding.tvHeroBadge.setTextColor(heroTint)
+        binding.tvHeroHoursBadge.background = ThemeManager.tintedTagDrawable(this, palette, heroTint)
+        binding.tvHeroHoursBadge.setTextColor(heroTint)
 
         binding.tvHeroBadge.text = when {
             breakdown.isCountUp -> "MILESTONE FOCUS"
@@ -729,6 +805,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val KEY_METRIC_MODE = "metric_mode"
+        private const val KEY_PULSE_SCOPE = "pulse_scope"
         private const val KEY_SORT_MODE = "sort_mode"
         private const val KEY_DISPLAY_FORMAT = "display_format"
         private const val KEY_DOTS_EXPANDED = "dots_expanded"

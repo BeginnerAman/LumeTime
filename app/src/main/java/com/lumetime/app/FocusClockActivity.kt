@@ -242,7 +242,11 @@ class FocusClockActivity : AppCompatActivity() {
             binding.tvAwakeLabel.setTextColor(palette.textSecondary)
         }
 
-        binding.focusCard.background = ThemeManager.cardDrawable(this, palette, isHero = true)
+        val itemAccent = runCatching {
+            Color.parseColor(currentItem?.accentHex ?: "")
+        }.getOrDefault(palette.accent)
+        binding.focusCard.background =
+            ThemeManager.accentedCardDrawable(this, palette, itemAccent, isHero = true)
         binding.tvFocusTitle.setTextColor(palette.textPrimary)
         binding.tvFocusNote.setTextColor(palette.textSecondary)
         binding.tvFocusRingPercent.setTextColor(palette.textPrimary)
@@ -277,22 +281,24 @@ class FocusClockActivity : AppCompatActivity() {
         val palette = ThemeManager.getPalette(this)
         val breakdown = TimeCalculator.calculateBreakdown(item, now)
         val itemAccent = runCatching { Color.parseColor(item.accentHex) }.getOrDefault(palette.accent)
-        val displayAccent = when {
-            breakdown.isCountUp -> itemAccent
-            breakdown.isExpired -> palette.textTertiary
-            breakdown.totalHours < 24L -> palette.urgentCoral
-            breakdown.days < 7L -> palette.warningAmber
-            else -> itemAccent
-        }
+        val displayAccent = if (breakdown.isExpired) palette.textTertiary else itemAccent
 
         val repeatText = when (item.repeatRule) {
             RepeatRule.YEARLY -> " • YEARLY"
             RepeatRule.MONTHLY -> " • MONTHLY"
             RepeatRule.NONE -> ""
         }
+        val urgencySuffix = when {
+            breakdown.isCountUp -> ""
+            breakdown.isExpired -> " • DONE"
+            breakdown.totalHours < 24L -> " • URGENT"
+            breakdown.days < 7L -> " • SOON"
+            else -> ""
+        }
         val modeLabel = if (breakdown.isCountUp) "MILESTONE" else item.category.label.uppercase(Locale.US)
-        binding.tvFocusCategoryBadge.text = "$modeLabel$repeatText"
-        binding.tvFocusCategoryBadge.background = ThemeManager.tagDrawable(this, palette)
+        binding.tvFocusCategoryBadge.text = "$modeLabel$repeatText$urgencySuffix"
+        binding.tvFocusCategoryBadge.background =
+            ThemeManager.tintedTagDrawable(this, palette, displayAccent)
         binding.tvFocusCategoryBadge.setTextColor(displayAccent)
 
         binding.ivFocusIcon.setImageResource(item.resolveIcon().drawableRes)

@@ -4,6 +4,7 @@ import com.lumetime.app.model.CountdownCategory
 import com.lumetime.app.model.CountdownItem
 import com.lumetime.app.model.CountdownMode
 import com.lumetime.app.model.RepeatRule
+import com.lumetime.app.model.TimePulseScope
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -180,5 +181,46 @@ class TimeCalculatorTest {
 
         val marCycle = TimeCalculator.resolveTargetCycle(item, afterFeb, utc)
         assertEquals(utcMillis(2026, 3, 31, 10, 0, 0), marCycle.effectiveTargetMillis)
+    }
+
+    @Test
+    fun `computePeriodProgress calculates today midpoint and remaining hours accurately`() {
+        val now = utcMillis(2026, 11, 27, 12, 0, 0)
+        val period = TimeCalculator.computePeriodProgress(TimePulseScope.TODAY, now, utc)
+
+        assertEquals(TimePulseScope.TODAY, period.scope)
+        assertEquals("Hour 13 / 24", period.badgeText)
+        assertEquals(24, period.totalUnits)
+        assertEquals(13, period.activeUnitOneBased)
+        assertEquals("12h 00m", period.summaryLeft)
+        assertEquals(50.0f, period.percentCompleted, 0.05f)
+    }
+
+    @Test
+    fun `computePeriodProgress calculates week progress starting Monday`() {
+        // 2026-11-27 is a Friday (day 5 of Mon-Sun week) at 00:00 -> 4 full days passed
+        val fridayMidnight = utcMillis(2026, 11, 27, 0, 0, 0)
+        val period = TimeCalculator.computePeriodProgress(TimePulseScope.WEEK, fridayMidnight, utc)
+
+        assertEquals(TimePulseScope.WEEK, period.scope)
+        assertEquals("Day 5 / 7", period.badgeText)
+        assertEquals(7, period.totalUnits)
+        assertEquals(5, period.activeUnitOneBased)
+        assertEquals(4, period.elapsedUnits)
+        assertEquals("3d 0h", period.summaryLeft)
+    }
+
+    @Test
+    fun `computePeriodProgress calculates month progress for November`() {
+        val novMiddle = utcMillis(2026, 11, 16, 0, 0, 0)
+        val period = TimeCalculator.computePeriodProgress(TimePulseScope.MONTH, novMiddle, utc)
+
+        assertEquals(TimePulseScope.MONTH, period.scope)
+        assertEquals("NOVEMBER PULSE", period.title)
+        assertEquals("Day 16 / 30", period.badgeText)
+        assertEquals(30, period.totalUnits)
+        assertEquals(16, period.activeUnitOneBased)
+        assertEquals("15", period.summaryLeft)
+        assertEquals(50.0f, period.percentCompleted, 0.05f)
     }
 }

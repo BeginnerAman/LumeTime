@@ -34,7 +34,7 @@ class YearDotMatrixView @JvmOverloads constructor(
     private var pulseAnimator: ValueAnimator? = null
 
     fun setData(totalDays: Int, todayDayOfYear: Int) {
-        val clampedTotal = totalDays.coerceIn(365, 366)
+        val clampedTotal = totalDays.coerceIn(7, 366)
         val clampedToday = (todayDayOfYear - 1).coerceIn(0, clampedTotal - 1)
         if (this.totalDays != clampedTotal || this.todayIndexZeroBased != clampedToday) {
             this.totalDays = clampedTotal
@@ -86,12 +86,21 @@ class YearDotMatrixView @JvmOverloads constructor(
         val availH = (height - paddingTop - paddingBottom).toFloat()
         if (availW <= 0f || availH <= 0f) return
 
-        // 26 columns x 15 rows neatly fits 365/366 days with crisp breathing room.
-        val cols = if (availW > availH * 3.0f) 31 else 26
+        val cols = when {
+            totalDays <= 7 -> totalDays
+            totalDays <= 24 -> 12
+            totalDays <= 31 -> 16
+            availW > availH * 3.0f -> 31
+            else -> 26
+        }
         val rows = (totalDays + cols - 1) / cols
         val cellW = availW / cols
         val cellH = availH / rows
-        val radius = (minOf(cellW, cellH) * 0.28f).coerceIn(2.2f, 8.5f)
+        val radius = when {
+            totalDays <= 7 -> (minOf(cellW, cellH) * 0.24f).coerceIn(6f, 16f)
+            totalDays <= 31 -> (minOf(cellW, cellH) * 0.28f).coerceIn(4f, 11f)
+            else -> (minOf(cellW, cellH) * 0.28f).coerceIn(2.2f, 8.5f)
+        }
         val startX = paddingLeft + cellW * 0.5f
         val startY = paddingTop + cellH * 0.5f
 

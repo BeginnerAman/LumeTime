@@ -403,6 +403,59 @@ object ThemeManager {
         return RippleDrawable(ColorStateList.valueOf(palette.accentSoft), layer, roundMask(radius))
     }
 
+    fun accentedCardDrawable(
+        context: Context,
+        palette: ThemePalette,
+        accentColor: Int,
+        isHero: Boolean = false
+    ): Drawable {
+        val radius = dp(context, if (isHero) 26f else 22f)
+        val radii = FloatArray(8) { radius }
+        val fill = if (isHero) palette.glassHeroSurface else palette.glassSurface
+        val base = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            this.cornerRadii = radii
+            setColor(fill)
+        }
+        val sheenColors = intArrayOf(
+            withAlpha(accentColor, if (palette.isDark) 0x26 else 0x1A),
+            if (palette.isDark) 0x12FFFFFF else 0x38FFFFFF,
+            0x02FFFFFF
+        )
+        val sheen = GradientDrawable(GradientDrawable.Orientation.TL_BR, sheenColors).apply {
+            shape = GradientDrawable.RECTANGLE
+            this.cornerRadii = radii
+        }
+        val rim = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            this.cornerRadii = radii
+            setColor(Color.TRANSPARENT)
+            setStroke(
+                dp(context, if (isHero) 1.35f else 1.15f).toInt().coerceAtLeast(1),
+                withAlpha(accentColor, if (palette.isDark) 0x8C else 0x7A)
+            )
+        }
+        val layer = LayerDrawable(arrayOf(base, sheen, rim))
+        return RippleDrawable(
+            ColorStateList.valueOf(withAlpha(accentColor, 0x38)),
+            layer,
+            roundMask(radius)
+        )
+    }
+
+    fun tintedTagDrawable(context: Context, palette: ThemePalette, tintColor: Int): Drawable {
+        val radius = dp(context, 999f)
+        return GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = radius
+            setColor(withAlpha(tintColor, if (palette.isDark) 0x32 else 0x24))
+            setStroke(
+                dp(context, 0.9f).toInt().coerceAtLeast(1),
+                withAlpha(tintColor, 0x66)
+            )
+        }
+    }
+
     fun pillDrawable(context: Context, palette: ThemePalette): Drawable {
         val radius = dp(context, 999f)
         val radii = FloatArray(8) { radius }

@@ -83,23 +83,20 @@ class CountdownAdapter(
             val pal = palette ?: return
             val breakdown = TimeCalculator.calculateBreakdown(item, currentNowMillis)
             val itemAccent = parseHexOrFallback(item.accentHex, pal.accent)
-
-            val urgencyColor = when {
-                breakdown.isCountUp -> itemAccent
-                breakdown.isExpired -> pal.textTertiary
-                breakdown.totalHours < 24L -> pal.urgentCoral
-                breakdown.days < 7L -> pal.warningAmber
-                else -> itemAccent
-            }
+            val displayColor = if (breakdown.isExpired) pal.textTertiary else itemAccent
 
             if (fullBind) {
                 val context = binding.root.context
-                binding.cardRoot.background =
-                    ThemeManager.cardDrawable(context, pal, isHero = item.isPinned)
+                binding.cardRoot.background = ThemeManager.accentedCardDrawable(
+                    context = context,
+                    palette = pal,
+                    accentColor = itemAccent,
+                    isHero = item.isPinned
+                )
 
                 val icon = item.resolveIcon()
                 binding.ivItemIcon.setImageResource(icon.drawableRes)
-                binding.ivItemIcon.setColorFilter(urgencyColor)
+                binding.ivItemIcon.setColorFilter(displayColor)
 
                 binding.tvItemTitle.text = item.title
                 binding.tvItemTitle.setTextColor(pal.textPrimary)
@@ -113,7 +110,7 @@ class CountdownAdapter(
                 }
 
                 binding.btnPinItem.setColorFilter(
-                    if (item.isPinned) pal.accent else pal.textTertiary
+                    if (item.isPinned) itemAccent else pal.textTertiary
                 )
                 binding.btnPinItem.alpha = if (item.isPinned) 1f else 0.55f
 
@@ -133,16 +130,48 @@ class CountdownAdapter(
                 }
             }
 
+            // Optional urgency badge without overriding user's chosen accent color
+            when {
+                breakdown.isCountUp -> binding.tvUrgencyTag.visibility = View.GONE
+                breakdown.isExpired -> {
+                    binding.tvUrgencyTag.visibility = View.VISIBLE
+                    binding.tvUrgencyTag.text = "DONE"
+                    binding.tvUrgencyTag.background = ThemeManager.tagDrawable(binding.root.context, pal)
+                    binding.tvUrgencyTag.setTextColor(pal.textTertiary)
+                }
+                breakdown.totalHours < 24L -> {
+                    binding.tvUrgencyTag.visibility = View.VISIBLE
+                    binding.tvUrgencyTag.text = "URGENT"
+                    binding.tvUrgencyTag.background = ThemeManager.tintedTagDrawable(
+                        binding.root.context,
+                        pal,
+                        pal.urgentCoral
+                    )
+                    binding.tvUrgencyTag.setTextColor(pal.urgentCoral)
+                }
+                breakdown.days < 7L -> {
+                    binding.tvUrgencyTag.visibility = View.VISIBLE
+                    binding.tvUrgencyTag.text = "SOON"
+                    binding.tvUrgencyTag.background = ThemeManager.tintedTagDrawable(
+                        binding.root.context,
+                        pal,
+                        pal.warningAmber
+                    )
+                    binding.tvUrgencyTag.setTextColor(pal.warningAmber)
+                }
+                else -> binding.tvUrgencyTag.visibility = View.GONE
+            }
+
             // Dynamic ring progress + metric updated smoothly on tick
             binding.ringItemProgress.setColors(
                 track = pal.progressTrack,
-                accentStart = ThemeManager.withAlpha(urgencyColor, 0xCC),
-                accentEnd = urgencyColor
+                accentStart = ThemeManager.withAlpha(displayColor, 0xCC),
+                accentEnd = displayColor
             )
             binding.ringItemProgress.setProgress(
                 if (breakdown.isCountUp) 1f else breakdown.progress
             )
-            binding.ivItemIcon.setColorFilter(urgencyColor)
+            binding.ivItemIcon.setColorFilter(displayColor)
 
             val formattedDate = dateFormatter.format(Date(breakdown.effectiveTargetMillis))
             val repeatTag = when (item.repeatRule) {
@@ -155,7 +184,7 @@ class CountdownAdapter(
             binding.tvItemMeta.setTextColor(pal.textTertiary)
 
             val formatted = CountdownDisplayFormatter.format(breakdown, displayFormat)
-            binding.tvPrimaryMetric.setTextColor(urgencyColor)
+            binding.tvPrimaryMetric.setTextColor(displayColor)
             binding.tvPrimaryMetric.text = formatted.primary
             binding.tvSecondaryMetric.setTextColor(pal.textSecondary)
             binding.tvSecondaryMetric.text = formatted.secondary

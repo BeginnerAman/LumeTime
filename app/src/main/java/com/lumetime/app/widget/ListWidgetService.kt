@@ -61,13 +61,11 @@ private class ListWidgetFactory(
         val iconBadgeBg = if (isDark) R.drawable.bg_widget_icon_dark else R.drawable.bg_widget_icon_light
         val primaryText = if (isDark) 0xFFF8FAFC.toInt() else 0xFF0F172A.toInt()
         val secondaryText = if (isDark) 0xFFB8C4D9.toInt() else 0xFF475569.toInt()
-        val accentText = when {
-            breakdown.isExpired -> secondaryText
-            !breakdown.isCountUp && breakdown.totalHours < 24L -> 0xFFFB7185.toInt()
-            !breakdown.isCountUp && breakdown.days < 7L -> 0xFFFBBF24.toInt()
-            isDark -> 0xFF67E8F9.toInt()
-            else -> 0xFF0284C7.toInt()
-        }
+        val fallbackAccent = if (isDark) 0xFF67E8F9.toInt() else 0xFF0284C7.toInt()
+        val itemAccent = runCatching {
+            android.graphics.Color.parseColor(item.accentHex)
+        }.getOrDefault(fallbackAccent)
+        val accentText = if (breakdown.isExpired) secondaryText else itemAccent
 
         val metricText = when {
             breakdown.isExpired -> "Done"

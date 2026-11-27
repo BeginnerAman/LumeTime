@@ -228,7 +228,16 @@ object CountdownEditorDialog {
                 binding.categoryContainer.addView(chip)
             }
 
-            // Accent Swatches
+            // Accent Swatches + Live Preview
+            val activeAccentInt = runCatching { Color.parseColor(accentHex) }.getOrDefault(palette.accent)
+            binding.tvAccentLabel.setTextColor(palette.textSecondary)
+            binding.tvAccentPreview.background = ThemeManager.tintedTagDrawable(
+                context,
+                palette,
+                activeAccentInt
+            )
+            binding.tvAccentPreview.setTextColor(activeAccentInt)
+
             binding.accentSwatchContainer.removeAllViews()
             val orbSize = ThemeManager.dp(context, 30f).toInt()
             val orbMargin = ThemeManager.dp(context, 10f).toInt()
