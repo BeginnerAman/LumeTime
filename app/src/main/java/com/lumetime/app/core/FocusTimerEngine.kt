@@ -12,8 +12,8 @@ enum class FocusToolTab {
  */
 data class FocusTimerSnapshot(
     val activeTab: FocusToolTab = FocusToolTab.TIMER,
-    val timerDurationMillis: Long = DEFAULT_POMODORO_MILLIS,
-    val timerRemainingMillis: Long = DEFAULT_POMODORO_MILLIS,
+    val timerDurationMillis: Long = FocusTimerEngine.DEFAULT_POMODORO_MILLIS,
+    val timerRemainingMillis: Long = FocusTimerEngine.DEFAULT_POMODORO_MILLIS,
     val timerTargetEndMillis: Long = 0L,
     val isTimerRunning: Boolean = false,
     val stopwatchStartMillis: Long = 0L,
