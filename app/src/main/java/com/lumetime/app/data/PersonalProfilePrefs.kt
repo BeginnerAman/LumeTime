@@ -7,6 +7,13 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
+data class DayFocusStat(
+    val dayKey: String,
+    val dayShortLabel: String,
+    val minutes: Int,
+    val isToday: Boolean
+)
+
 data class PersonalProfile(
     val userName: String = "",
     val dailyIntention: String = "",
@@ -18,11 +25,13 @@ data class PersonalProfile(
     val sleepHour: Int = 23,
     val focusedMinutesToday: Int = 0,
     val focusedSessionsToday: Int = 0,
-    val focusedDayKey: String = ""
+    val focusedDayKey: String = "",
+    val weeklyMinutesByDay: Map<String, Int> = emptyMap(),
+    val totalLifetimeSessions: Int = 0
 )
 
 /**
- * Pure greeting & focus-stats helpers plus SharedPreferences persistence
+ * Pure greeting & 7-day focus-history helpers plus SharedPreferences persistence
  * for user personalization without any cloud/account overhead.
  */
 object PersonalProfilePrefs {
@@ -39,6 +48,8 @@ object PersonalProfilePrefs {
     private const val KEY_FOCUSED_MIN_TODAY = "focused_minutes_today"
     private const val KEY_FOCUSED_SESSIONS_TODAY = "focused_sessions_today"
     private const val KEY_FOCUSED_DAY_KEY = "focused_day_key"
+    private const val KEY_WEEKLY_HISTORY = "weekly_focus_history"
+    private const val KEY_TOTAL_SESSIONS = "total_lifetime_sessions"
 
     fun buildGreeting(hourOfDay: Int, userName: String): String {
         val salutation = when (hourOfDay) {
@@ -66,13 +77,24 @@ object PersonalProfilePrefs {
         timeZone: TimeZone = TimeZone.getDefault()
     ): PersonalProfile {
         val today = dayKey(nowMillis, timeZone)
+        val mergedHistory = profile.weeklyMinutesByDay.toMutableMap()
+        if (profile.focusedDayKey.isNotBlank() && profile.focusedMinutesToday > 0) {
+            mergedHistory[profile.focusedDayKey] = maxOf(
+                mergedHistory[profile.focusedDayKey] ?: 0,
+                profile.focusedMinutesToday
+            )
+        }
+        val validKeys = lastNDaysKeys(7, nowMillis, timeZone).toSet()
+        val prunedHistory = mergedHistory.filterKeys { validKeys.contains(it) }
+
         return if (profile.focusedDayKey == today) {
-            profile
+            profile.copy(weeklyMinutesByDay = prunedHistory)
         } else {
             profile.copy(
-                focusedMinutesToday = 0,
+                focusedMinutesToday = prunedHistory[today] ?: 0,
                 focusedSessionsToday = 0,
-                focusedDayKey = today
+                focusedDayKey = today,
+                weeklyMinutesByDay = prunedHistory
             )
         }
     }
@@ -85,10 +107,81 @@ object PersonalProfilePrefs {
     ): PersonalProfile {
         val normalized = normalizeForToday(profile, nowMillis, timeZone)
         val safeMinutes = sessionMinutes.coerceAtLeast(1)
+        val nextTodayMinutes = normalized.focusedMinutesToday + safeMinutes
+        val updatedHistory = normalized.weeklyMinutesByDay.toMutableMap().apply {
+            put(normalized.focusedDayKey, nextTodayMinutes)
+        }
         return normalized.copy(
-            focusedMinutesToday = normalized.focusedMinutesToday + safeMinutes,
-            focusedSessionsToday = normalized.focusedSessionsToday + 1
+            focusedMinutesToday = nextTodayMinutes,
+            focusedSessionsToday = normalized.focusedSessionsToday + 1,
+            weeklyMinutesByDay = updatedHistory,
+            totalLifetimeSessions = normalized.totalLifetimeSessions + 1
         )
+    }
+
+    fun buildLast7DaysStats(
+        profile: PersonalProfile,
+        nowMillis: Long = System.currentTimeMillis(),
+        timeZone: TimeZone = TimeZone.getDefault()
+    ): List<DayFocusStat> {
+        val normalized = normalizeForToday(profile, nowMillis, timeZone)
+        val todayKey = dayKey(nowMillis, timeZone)
+        val shortFmt = SimpleDateFormat("EEE", Locale.US).apply { this.timeZone = timeZone }
+        val result = ArrayList<DayFocusStat>(7)
+        val cal = Calendar.getInstance(timeZone).apply {
+            timeInMillis = nowMillis
+            add(Calendar.DAY_OF_YEAR, -6)
+        }
+        for (i in 0 until 7) {
+            val k = dayKey(cal.timeInMillis, timeZone)
+            val label = shortFmt.format(Date(cal.timeInMillis)).take(1)
+            val mins = if (k == todayKey) {
+                maxOf(normalized.focusedMinutesToday, normalized.weeklyMinutesByDay[k] ?: 0)
+            } else {
+                normalized.weeklyMinutesByDay[k] ?: 0
+            }
+            result.add(
+                DayFocusStat(
+                    dayKey = k,
+                    dayShortLabel = label,
+                    minutes = mins,
+                    isToday = k == todayKey
+                )
+            )
+            cal.add(Calendar.DAY_OF_YEAR, 1)
+        }
+        return result
+    }
+
+    private fun lastNDaysKeys(days: Int, nowMillis: Long, timeZone: TimeZone): List<String> {
+        val cal = Calendar.getInstance(timeZone).apply { timeInMillis = nowMillis }
+        val list = ArrayList<String>(days)
+        for (i in 0 until days) {
+            list.add(dayKey(cal.timeInMillis, timeZone))
+            cal.add(Calendar.DAY_OF_YEAR, -1)
+        }
+        return list
+    }
+
+    private fun decodeHistory(raw: String): Map<String, Int> {
+        if (raw.isBlank()) return emptyMap()
+        val map = LinkedHashMap<String, Int>()
+        raw.split(";").forEach { entry ->
+            val parts = entry.split(":")
+            if (parts.size == 2) {
+                val mins = parts[1].toIntOrNull()
+                if (parts[0].isNotBlank() && mins != null && mins > 0) {
+                    map[parts[0]] = mins
+                }
+            }
+        }
+        return map
+    }
+
+    private fun encodeHistory(map: Map<String, Int>): String {
+        return map.entries
+            .filter { it.value > 0 }
+            .joinToString(";") { "${it.key}:${it.value}" }
     }
 
     fun load(
@@ -107,7 +200,9 @@ object PersonalProfilePrefs {
             sleepHour = prefs.getInt(KEY_SLEEP_HOUR, 23).coerceIn(1, 23),
             focusedMinutesToday = prefs.getInt(KEY_FOCUSED_MIN_TODAY, 0).coerceAtLeast(0),
             focusedSessionsToday = prefs.getInt(KEY_FOCUSED_SESSIONS_TODAY, 0).coerceAtLeast(0),
-            focusedDayKey = prefs.getString(KEY_FOCUSED_DAY_KEY, "").orEmpty()
+            focusedDayKey = prefs.getString(KEY_FOCUSED_DAY_KEY, "").orEmpty(),
+            weeklyMinutesByDay = decodeHistory(prefs.getString(KEY_WEEKLY_HISTORY, "").orEmpty()),
+            totalLifetimeSessions = prefs.getInt(KEY_TOTAL_SESSIONS, 0).coerceAtLeast(0)
         )
         return normalizeForToday(raw, nowMillis)
     }
@@ -126,6 +221,8 @@ object PersonalProfilePrefs {
             .putInt(KEY_FOCUSED_MIN_TODAY, profile.focusedMinutesToday)
             .putInt(KEY_FOCUSED_SESSIONS_TODAY, profile.focusedSessionsToday)
             .putString(KEY_FOCUSED_DAY_KEY, profile.focusedDayKey)
+            .putString(KEY_WEEKLY_HISTORY, encodeHistory(profile.weeklyMinutesByDay))
+            .putInt(KEY_TOTAL_SESSIONS, profile.totalLifetimeSessions)
             .apply()
     }
 

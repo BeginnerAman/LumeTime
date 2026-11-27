@@ -58,4 +58,20 @@ class PersonalProfileAndAwakeDayTest {
         assertEquals("awake left", awake.unitLabel)
         assertEquals(50.0f, awake.percentCompleted, 0.1f)
     }
+
+    @Test
+    fun `buildLast7DaysStats returns ordered 7 day window preserving historical minutes`() {
+        val day1 = utcMillis(2026, 11, 25, 10)
+        val day2 = utcMillis(2026, 11, 27, 16)
+
+        var profile = PersonalProfile(dailyFocusGoalMinutes = 60)
+        profile = PersonalProfilePrefs.applyCompletedSession(profile, 45, day1, utc)
+        profile = PersonalProfilePrefs.applyCompletedSession(profile, 30, day2, utc)
+
+        val stats = PersonalProfilePrefs.buildLast7DaysStats(profile, day2, utc)
+        assertEquals(7, stats.size)
+        assertEquals("2026-11-27", stats.last().dayKey)
+        assertEquals(30, stats.last().minutes)
+        assertEquals(45, stats.first { it.dayKey == "2026-11-25" }.minutes)
+    }
 }

@@ -25,8 +25,12 @@ class GlassProgressBar @JvmOverloads constructor(
 
     private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val shinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0x52FFFFFF
+    }
     private val rect = RectF()
     private val fillRect = RectF()
+    private val shineRect = RectF()
 
     fun setProgress(value: Float) {
         val clamped = value.coerceIn(0f, 1f)
@@ -76,5 +80,13 @@ class GlassProgressBar @JvmOverloads constructor(
         }
         fillRect.set(0f, 0f, fillW, h)
         canvas.drawRoundRect(fillRect, radius, radius, fillPaint)
+
+        // Subtle Liquid Glass top specular highlight along the active tube
+        if (fillW > h * 1.4f && h >= 4f) {
+            val insetX = h * 0.35f
+            val shineH = (h * 0.28f).coerceAtLeast(1.2f)
+            shineRect.set(insetX, h * 0.14f, fillW - insetX, h * 0.14f + shineH)
+            canvas.drawRoundRect(shineRect, shineH * 0.5f, shineH * 0.5f, shinePaint)
+        }
     }
 }

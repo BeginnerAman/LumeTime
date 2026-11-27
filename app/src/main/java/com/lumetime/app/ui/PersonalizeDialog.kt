@@ -70,6 +70,13 @@ object PersonalizeDialog {
             )
             binding.pbFocusGoalToday.setProgress(goalProgress)
 
+            binding.tvWeeklyChartCaption.setTextColor(palette.textSecondary)
+            binding.weeklyFocusChart.setThemePalette(palette)
+            binding.weeklyFocusChart.setStats(
+                PersonalProfilePrefs.buildLast7DaysStats(profile),
+                profile.dailyFocusGoalMinutes
+            )
+
             binding.etProfileName.background = ThemeManager.pillDrawable(context, palette)
             binding.etProfileName.setTextColor(palette.textPrimary)
             binding.etProfileName.setHintTextColor(palette.textTertiary)

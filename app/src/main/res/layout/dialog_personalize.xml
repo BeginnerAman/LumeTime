@@ -93,6 +93,23 @@
                 android:layout_width="match_parent"
                 android:layout_height="6dp"
                 android:layout_marginTop="8dp" />
+
+            <TextView
+                android:id="@+id/tvWeeklyChartCaption"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.06"
+                android:text="LAST 7 DAYS CONSISTENCY"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <com.lumetime.app.ui.WeeklyFocusChartView
+                android:id="@+id/weeklyFocusChart"
+                android:layout_width="match_parent"
+                android:layout_height="72dp"
+                android:layout_marginTop="6dp" />
         </LinearLayout>
 
         <EditText

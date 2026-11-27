@@ -2,7 +2,10 @@ package com.lumetime.app
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.RectF
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -20,7 +23,10 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.lumetime.app.model.CountdownMode
 import com.lumetime.app.core.FocusTimerEngine
 import com.lumetime.app.core.PrecisionClockTicker
 import com.lumetime.app.core.ReminderScheduler
@@ -297,6 +303,117 @@ class MainActivity : AppCompatActivity() {
         binding.rvCountdowns.layoutManager = LinearLayoutManager(this)
         binding.rvCountdowns.adapter = countdownAdapter
         binding.rvCountdowns.itemAnimator = null
+        attachCardSwipeGestures()
+    }
+
+    private fun attachCardSwipeGestures() {
+        val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+        val swipeRect = RectF()
+        val corner = ThemeManager.dp(this, 22f)
+        val iconSize = ThemeManager.dp(this, 22f).toInt()
+        val iconInset = ThemeManager.dp(this, 20f).toInt()
+        val bottomMargin = ThemeManager.dp(this, 12f)
+
+        val callback = object : ItemTouchHelper.SimpleCallback(
+            0,
+            ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
+        ) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean = false
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val pos = viewHolder.bindingAdapterPosition
+                val item = countdownAdapter.currentList.getOrNull(pos) ?: return
+                ThemeManager.performTapHaptic(viewHolder.itemView)
+
+                if (direction == ItemTouchHelper.LEFT) {
+                    store.delete(item.id)
+                    ReminderScheduler.cancelForItem(this@MainActivity, item.id)
+                    allItems = store.loadAll()
+                    recentlyDeletedItem = item
+                    showUndoBanner(item.title)
+                    reloadCountdowns(animateHeroRoll = false)
+                    WidgetScheduler.refreshAllWidgets(this@MainActivity)
+                } else {
+                    if (item.mode == CountdownMode.COUNT_UP) {
+                        allItems = store.checkInMilestone(item.id)
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Checked in for \"${item.title}\"",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        allItems = store.togglePin(item.id)
+                    }
+                    reloadCountdowns(animateHeroRoll = false)
+                    WidgetScheduler.refreshAllWidgets(this@MainActivity)
+                }
+            }
+
+            override fun onChildDraw(
+                c: Canvas,
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                dX: Float,
+                dY: Float,
+                actionState: Int,
+                isCurrentlyActive: Boolean
+            ) {
+                val itemView = viewHolder.itemView
+                val palette = ThemeManager.getPalette(this@MainActivity)
+                val pos = viewHolder.bindingAdapterPosition
+                val item = countdownAdapter.currentList.getOrNull(pos)
+
+                if (dX < -8f) {
+                    bgPaint.color = ThemeManager.withAlpha(palette.urgentCoral, 0x38)
+                    swipeRect.set(
+                        itemView.left.toFloat(),
+                        itemView.top.toFloat(),
+                        itemView.right.toFloat(),
+                        (itemView.bottom.toFloat() - bottomMargin).coerceAtLeast(itemView.top.toFloat())
+                    )
+                    c.drawRoundRect(swipeRect, corner, corner, bgPaint)
+
+                    ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_delete)?.let { icon ->
+                        val cy = ((swipeRect.top + swipeRect.bottom) * 0.5f).toInt()
+                        val right = itemView.right - iconInset
+                        icon.setTint(palette.urgentCoral)
+                        icon.setBounds(right - iconSize, cy - iconSize / 2, right, cy + iconSize / 2)
+                        icon.draw(c)
+                    }
+                } else if (dX > 8f) {
+                    val accent = item?.let {
+                        runCatching { Color.parseColor(it.accentHex) }.getOrDefault(palette.accent)
+                    } ?: palette.accent
+                    bgPaint.color = ThemeManager.withAlpha(accent, 0x38)
+                    swipeRect.set(
+                        itemView.left.toFloat(),
+                        itemView.top.toFloat(),
+                        itemView.right.toFloat(),
+                        (itemView.bottom.toFloat() - bottomMargin).coerceAtLeast(itemView.top.toFloat())
+                    )
+                    c.drawRoundRect(swipeRect, corner, corner, bgPaint)
+
+                    val resId = if (item?.mode == CountdownMode.COUNT_UP) {
+                        R.drawable.ic_check
+                    } else {
+                        R.drawable.ic_pin
+                    }
+                    ContextCompat.getDrawable(this@MainActivity, resId)?.let { icon ->
+                        val cy = ((swipeRect.top + swipeRect.bottom) * 0.5f).toInt()
+                        val left = itemView.left + iconInset
+                        icon.setTint(accent)
+                        icon.setBounds(left, cy - iconSize / 2, left + iconSize, cy + iconSize / 2)
+                        icon.draw(c)
+                    }
+                }
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+            }
+        }
+        ItemTouchHelper(callback).attachToRecyclerView(binding.rvCountdowns)
     }
 
     private fun setupInteractions() {
@@ -305,6 +422,7 @@ class MainActivity : AppCompatActivity() {
         FocusAnimations.attachGlassPress(binding.btnWidgetsStudio, 0.92f)
         FocusAnimations.attachGlassPress(binding.btnThemePicker, 0.92f)
         FocusAnimations.attachGlassPress(binding.btnFocusTimerTool, 0.96f)
+        FocusAnimations.attachGlassPress(binding.btnDeskClockTool, 0.96f)
         FocusAnimations.attachGlassPress(binding.btnDateCalcTool, 0.96f)
         FocusAnimations.attachGlassPress(binding.btnWorldClockTool, 0.96f)
         FocusAnimations.attachGlassPress(binding.cardYearPulse, 0.985f)
@@ -474,6 +592,11 @@ class MainActivity : AppCompatActivity() {
         binding.btnWorldClockTool.setOnClickListener { view ->
             ThemeManager.performTapHaptic(view)
             WorldClockDialog.show(this, ThemeManager.getPalette(this))
+        }
+
+        binding.btnDeskClockTool.setOnClickListener { view ->
+            ThemeManager.performTapHaptic(view)
+            startActivity(DeskClockActivity.createIntent(this))
         }
 
         binding.cardYearPulse.setOnClickListener { view ->
@@ -740,6 +863,16 @@ class MainActivity : AppCompatActivity() {
         binding.ivFocusToolIcon.setColorFilter(palette.accent)
         binding.tvFocusToolLabel.setTextColor(palette.textPrimary)
 
+        binding.btnDeskClockTool.background = ThemeManager.pillDrawable(this, palette)
+        binding.ivDeskClockToolIcon.setColorFilter(palette.accent)
+        binding.tvDeskClockToolLabel.setTextColor(palette.textPrimary)
+
+        binding.pbHeaderFocusGoal.setColors(
+            track = palette.progressTrack,
+            accentStart = palette.accentEnd,
+            accentEnd = palette.accent
+        )
+
         binding.btnDateCalcTool.background = ThemeManager.pillDrawable(this, palette)
         binding.ivDateCalcToolIcon.setColorFilter(palette.accent)
         binding.tvDateCalcToolLabel.setTextColor(palette.textPrimary)
@@ -842,6 +975,9 @@ class MainActivity : AppCompatActivity() {
         } else {
             "$dateText • Goal ${profile.dailyFocusGoalMinutes}m"
         }
+        val goalProgress = (profile.focusedMinutesToday.toFloat() /
+            profile.dailyFocusGoalMinutes.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
+        binding.pbHeaderFocusGoal.setProgress(goalProgress)
     }
 
     private fun updateQuickToolsBar(now: Long) {
