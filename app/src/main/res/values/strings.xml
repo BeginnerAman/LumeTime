@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">LumeTime</string>
-    <string name="phase1_subtitle">Foundation &amp; Precision Time Engine Ready</string>
+    <string name="tagline_live">Precision Time &amp; Glass Widgets</string>
+    <string name="year_pulse_badge">YEAR PULSE</string>
+    <string name="tap_to_cycle">Tap to switch metric</string>
+    <string name="choose_theme">Glass Theme</string>
+    <string name="choose_theme_subtitle">Pick your liquid glass atmosphere &amp; mode</string>
+    <string name="done_label">Done</string>
+    <string name="mode_auto">Auto</string>
+    <string name="mode_dark">Dark</string>
+    <string name="mode_light">Light</string>
+    <string name="phase2_upcoming_title">Your Countdowns Space</string>
+    <string name="phase2_upcoming_desc">Phase 3 will add unlimited rolling countdowns, count-up milestones, and instant Glass creation here — followed by 3 Home Screen Widgets in Phase 5.</string>
 </resources>

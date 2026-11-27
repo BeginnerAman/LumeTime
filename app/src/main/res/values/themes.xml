@@ -6,4 +6,12 @@
         <item name="colorAccent">@color/accent_cyan</item>
         <item name="android:windowBackground">@color/bg_base</item>
     </style>
+
+    <style name="Theme.LumeTime.GlassDialog" parent="Theme.AppCompat.DayNight.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.50</item>
+        <item name="windowNoTitle">true</item>
+    </style>
 </resources>

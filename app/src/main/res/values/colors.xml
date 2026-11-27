@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="bg_base">#0A0F1E</color>
+    <color name="bg_base">#070B18</color>
+    <color name="glass_surface">#B8141D35</color>
+    <color name="glass_surface_strong">#EB18223D</color>
+    <color name="glass_pill">#B31E2A4A</color>
+    <color name="glass_stroke">#38FFFFFF</color>
     <color name="text_primary">#F8FAFC</color>
     <color name="text_secondary">#B8C4D9</color>
-    <color name="accent_cyan">#67E8F9</color>
+    <color name="text_tertiary">#7D8CA8</color>
+    <color name="accent_cyan">#38BDF8</color>
+    <color name="accent_cyan_soft">#3338BDF8</color>
 </resources>
