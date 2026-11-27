@@ -765,10 +765,15 @@ class MainActivity : AppCompatActivity() {
             prefillTargetMillis = prefillTargetMillis,
             prefillTitle = prefillTitle,
             onSave = { saved ->
+                val isBrandNew = existing == null
                 allItems = store.upsert(saved)
                 ReminderScheduler.scheduleForItem(this, saved)
                 reloadCountdowns(animateHeroRoll = false)
                 WidgetScheduler.refreshAllWidgets(this)
+                if (isBrandNew && activeNavTab == NavTab.HOME && heroItem?.id != saved.id) {
+                    activeNavTab = NavTab.TIMERS
+                    applyNavTab(animate = true)
+                }
             },
             onDelete = { deleted ->
                 store.delete(deleted.id)

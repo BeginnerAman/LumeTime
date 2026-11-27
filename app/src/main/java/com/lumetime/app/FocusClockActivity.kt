@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -20,6 +21,7 @@ import androidx.lifecycle.lifecycleScope
 import com.lumetime.app.core.PrecisionClockTicker
 import com.lumetime.app.core.ReminderScheduler
 import com.lumetime.app.core.TimeCalculator
+import com.lumetime.app.core.TimerAlertManager
 import com.lumetime.app.data.CountdownStore
 import com.lumetime.app.databinding.ActivityFocusClockBinding
 import com.lumetime.app.model.CountdownItem
@@ -54,6 +56,7 @@ class FocusClockActivity : AppCompatActivity() {
     private var keepAwake: Boolean = false
     private var firstRender: Boolean = true
     private var lastChecklistRenderKey: String = ""
+    private var wasActivePreviously: Boolean = false
 
     private var basePadLeft = 0
     private var basePadTop = 0
@@ -351,6 +354,21 @@ class FocusClockActivity : AppCompatActivity() {
 
         val prefix = if (breakdown.isCountUp) "Started " else "Target • "
         binding.tvFocusTargetDate.text = prefix + dateFormat.format(Date(breakdown.effectiveTargetMillis))
+        if (!breakdown.isCountUp) {
+            if (wasActivePreviously && breakdown.isExpired) {
+                wasActivePreviously = false
+                TimerAlertManager.playCompletionChimeAndVibrate(this)
+                Toast.makeText(
+                    this,
+                    getString(R.string.focus_target_reached_toast, item.title),
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                wasActivePreviously = !breakdown.isExpired
+            }
+        } else {
+            wasActivePreviously = false
+        }
         renderChecklist(item, palette, displayAccent)
     }
 

@@ -1,8 +1,6 @@
 package com.lumetime.app.core
 
 import android.Manifest
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -79,26 +77,6 @@ class ReminderReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun ensureChannel(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val manager =
-                context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
-                    ?: return
-            val existing = manager.getNotificationChannel(CHANNEL_ID)
-            if (existing == null) {
-                val channel = NotificationChannel(
-                    CHANNEL_ID,
-                    context.getString(R.string.reminder_channel_name),
-                    NotificationManager.IMPORTANCE_DEFAULT
-                ).apply {
-                    description = context.getString(R.string.reminder_channel_desc)
-                }
-                manager.createNotificationChannel(channel)
-            }
-        }
-    }
-
-    companion object {
-        const val CHANNEL_ID = "lumetime_reminders"
+        // No duplicate scheduling here; AlarmManager notifications fire directly via TimerAlertManager.ALERTS_CHANNEL_ID.
     }
 }

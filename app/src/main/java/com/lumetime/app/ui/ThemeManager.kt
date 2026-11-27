@@ -482,7 +482,10 @@ object ThemeManager {
         val radius = dp(context, 999f)
         val content = GradientDrawable(
             GradientDrawable.Orientation.LEFT_RIGHT,
-            intArrayOf(palette.accent, palette.accentEnd)
+            intArrayOf(
+                ensureRichFillColor(palette.accent),
+                ensureRichFillColor(palette.accentEnd)
+            )
         ).apply {
             shape = GradientDrawable.RECTANGLE
             cornerRadius = radius
@@ -494,13 +497,36 @@ object ThemeManager {
         val radius = dp(context, 999f)
         val content = GradientDrawable(
             GradientDrawable.Orientation.TL_BR,
-            intArrayOf(palette.accent, palette.accentEnd)
+            intArrayOf(
+                ensureRichFillColor(palette.accent),
+                ensureRichFillColor(palette.accentEnd)
+            )
         ).apply {
             shape = GradientDrawable.RECTANGLE
             cornerRadius = radius
             setStroke(dp(context, 1f).toInt().coerceAtLeast(1), 0x77FFFFFF)
         }
         return RippleDrawable(ColorStateList.valueOf(0x40FFFFFF), content, roundMask(radius))
+    }
+
+    /**
+     * Ensures gradient fill colors remain dark enough for crisp white text/icon legibility
+     * while preserving pastel hue on dark-mode accents such as bright cyan or amber.
+     */
+    internal fun ensureRichFillColor(color: Int, maxLuminance: Double = 0.42): Int {
+        val alpha = (color ushr 24) and 0xFF
+        val red = (color ushr 16) and 0xFF
+        val green = (color ushr 8) and 0xFF
+        val blue = color and 0xFF
+        val perceivedLuminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255.0
+        if (perceivedLuminance <= maxLuminance || perceivedLuminance <= 0.0) {
+            return color
+        }
+        val scale = (maxLuminance / perceivedLuminance).coerceIn(0.25, 1.0)
+        val rOut = (red * scale).toInt().coerceIn(0, 255)
+        val gOut = (green * scale).toInt().coerceIn(0, 255)
+        val bOut = (blue * scale).toInt().coerceIn(0, 255)
+        return (alpha shl 24) or (rOut shl 16) or (gOut shl 8) or bOut
     }
 
     fun sheetDrawable(context: Context, palette: ThemePalette): Drawable {

@@ -77,4 +77,5 @@
     <string name="quick_desk_clock_label">Desk Clock</string>
     <string name="prep_checklist_label">Prep Checklist</string>
     <string name="add_step_hint">Add step (e.g. Revise Notes)</string>
+    <string name="focus_target_reached_toast">Target reached for %s!</string>
 </resources>

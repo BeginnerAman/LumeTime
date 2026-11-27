@@ -12,6 +12,8 @@ import android.media.AudioManager
 import android.media.RingtoneManager
 import android.media.ToneGenerator
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -172,18 +174,25 @@ object TimerAlertManager {
     }
 
     private fun playGentleChime(context: Context) {
+        val handler = Handler(Looper.getMainLooper())
         runCatching {
             val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
                 ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
             val ringtone = if (uri != null) RingtoneManager.getRingtone(context, uri) else null
             if (ringtone != null) {
                 ringtone.play()
+                handler.postDelayed({
+                    runCatching { if (ringtone.isPlaying) ringtone.stop() }
+                }, 4_500L)
                 return
             }
         }
         runCatching {
             val tg = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 85)
             tg.startTone(ToneGenerator.TONE_PROP_ACK, 380)
+            handler.postDelayed({
+                runCatching { tg.release() }
+            }, 450L)
         }
     }
 
