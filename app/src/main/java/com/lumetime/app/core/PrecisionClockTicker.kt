@@ -26,8 +26,8 @@ object PrecisionClockTicker {
      */
     fun nextMidpointDelayMillis(nowMillis: Long): Long {
         val mod = ((nowMillis % 1000L) + 1000L) % 1000L
-        var delay = 1500L - mod
-        if (delay < 250L) {
+        var delay = 500L - mod
+        while (delay < 250L) {
             delay += 1000L
         }
         return delay
