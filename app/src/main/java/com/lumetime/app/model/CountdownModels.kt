@@ -46,7 +46,8 @@ data class CountdownItem(
     val accentHex: String = "#67E8F9",
     val isPinned: Boolean = false,
     val emoji: String = CountdownIcon.forCategory(category).id,
-    val reminderEnabled: Boolean = false
+    val reminderEnabled: Boolean = false,
+    val note: String = ""
 ) {
     fun resolveIcon(): CountdownIcon = CountdownIcon.fromStored(emoji, category)
 }

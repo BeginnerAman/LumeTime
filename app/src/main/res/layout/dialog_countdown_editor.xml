@@ -91,12 +91,26 @@
             android:layout_height="46dp"
             android:layout_marginTop="12dp"
             android:hint="@string/title_hint"
-            android:imeOptions="actionDone"
+            android:imeOptions="actionNext"
             android:inputType="textCapSentences"
             android:maxLength="48"
             android:paddingHorizontal="14dp"
             android:singleLine="true"
             android:textSize="15sp" />
+
+        <!-- Optional Note Input -->
+        <EditText
+            android:id="@+id/etNote"
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
+            android:layout_marginTop="8dp"
+            android:hint="@string/note_hint"
+            android:imeOptions="actionDone"
+            android:inputType="textCapSentences"
+            android:maxLength="80"
+            android:paddingHorizontal="14dp"
+            android:singleLine="true"
+            android:textSize="13sp" />
 
         <!-- Mode Switcher -->
         <LinearLayout

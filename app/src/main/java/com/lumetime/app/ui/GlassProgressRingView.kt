@@ -38,10 +38,15 @@ class GlassProgressRingView @JvmOverloads constructor(
     private val arcRect = RectF()
 
     init {
-        val strokePx = 10f * resources.displayMetrics.density
+        setStrokeWidthDp(10f)
+    }
+
+    fun setStrokeWidthDp(widthDp: Float) {
+        val strokePx = widthDp * resources.displayMetrics.density
         trackPaint.strokeWidth = strokePx
         arcPaint.strokeWidth = strokePx
-        glowPaint.strokeWidth = strokePx * 1.9f
+        glowPaint.strokeWidth = strokePx * 1.85f
+        invalidate()
     }
 
     fun setProgress(value: Float) {

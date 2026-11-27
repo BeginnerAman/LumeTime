@@ -1,7 +1,6 @@
 package com.lumetime.app.ui
 
 import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,8 +16,8 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * DiffUtil-backed adapter for countdown cards with lightweight 1-second tick payloads
- * and automatic urgency color accents.
+ * DiffUtil-backed adapter for countdown cards featuring mini circular progress rings,
+ * crisp SF-style vector icons, optional notes, and 4 display unit formats.
  */
 class CountdownAdapter(
     private val onCardClick: (CountdownItem) -> Unit,
@@ -27,7 +26,7 @@ class CountdownAdapter(
 ) : ListAdapter<CountdownItem, CountdownAdapter.CountdownViewHolder>(DiffCallback) {
 
     private var palette: ThemeManager.ThemePalette? = null
-    private var showTotalHoursMode: Boolean = false
+    private var displayFormat: CountdownDisplayFormat = CountdownDisplayFormat.DAYS_HOURS
     private var currentNowMillis: Long = System.currentTimeMillis()
     private val dateFormatter = SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault())
 
@@ -36,9 +35,9 @@ class CountdownAdapter(
         notifyItemRangeChanged(0, itemCount)
     }
 
-    fun setShowTotalHours(enabled: Boolean) {
-        if (showTotalHoursMode != enabled) {
-            showTotalHoursMode = enabled
+    fun setDisplayFormat(format: CountdownDisplayFormat) {
+        if (displayFormat != format) {
+            displayFormat = format
             notifyItemRangeChanged(0, itemCount, PAYLOAD_TICK)
         }
     }
@@ -56,6 +55,7 @@ class CountdownAdapter(
             parent,
             false
         )
+        binding.ringItemProgress.setStrokeWidthDp(3.2f)
         return CountdownViewHolder(binding)
     }
 
@@ -94,21 +94,23 @@ class CountdownAdapter(
 
             if (fullBind) {
                 val context = binding.root.context
-                binding.cardRoot.background = ThemeManager.cardDrawable(context, pal, isHero = item.isPinned)
+                binding.cardRoot.background =
+                    ThemeManager.cardDrawable(context, pal, isHero = item.isPinned)
+
                 val icon = item.resolveIcon()
-                binding.iconBadgeContainer.background = GradientDrawable().apply {
-                    shape = GradientDrawable.OVAL
-                    setColor(ThemeManager.withAlpha(itemAccent, if (pal.isDark) 0x33 else 0x22))
-                    setStroke(
-                        ThemeManager.dp(context, 1f).toInt().coerceAtLeast(1),
-                        ThemeManager.withAlpha(itemAccent, 0x66)
-                    )
-                }
                 binding.ivItemIcon.setImageResource(icon.drawableRes)
-                binding.ivItemIcon.setColorFilter(itemAccent)
+                binding.ivItemIcon.setColorFilter(urgencyColor)
 
                 binding.tvItemTitle.text = item.title
                 binding.tvItemTitle.setTextColor(pal.textPrimary)
+
+                if (item.note.isNotBlank()) {
+                    binding.tvItemNote.visibility = View.VISIBLE
+                    binding.tvItemNote.text = item.note
+                    binding.tvItemNote.setTextColor(pal.textSecondary)
+                } else {
+                    binding.tvItemNote.visibility = View.GONE
+                }
 
                 binding.btnPinItem.setColorFilter(
                     if (item.isPinned) pal.accent else pal.textTertiary
@@ -131,7 +133,17 @@ class CountdownAdapter(
                 }
             }
 
-            // Dynamic time + progress fields updated on every tick
+            // Dynamic ring progress + metric updated smoothly on tick
+            binding.ringItemProgress.setColors(
+                track = pal.progressTrack,
+                accentStart = ThemeManager.withAlpha(urgencyColor, 0xCC),
+                accentEnd = urgencyColor
+            )
+            binding.ringItemProgress.setProgress(
+                if (breakdown.isCountUp) 1f else breakdown.progress
+            )
+            binding.ivItemIcon.setColorFilter(urgencyColor)
+
             val formattedDate = dateFormatter.format(Date(breakdown.effectiveTargetMillis))
             val repeatTag = when (item.repeatRule) {
                 RepeatRule.YEARLY -> " • Yearly"
@@ -140,44 +152,13 @@ class CountdownAdapter(
             }
             val modeTag = if (breakdown.isCountUp) "Since " else ""
             binding.tvItemMeta.text = "$modeTag$formattedDate$repeatTag"
-            binding.tvItemMeta.setTextColor(pal.textSecondary)
+            binding.tvItemMeta.setTextColor(pal.textTertiary)
 
+            val formatted = CountdownDisplayFormatter.format(breakdown, displayFormat)
             binding.tvPrimaryMetric.setTextColor(urgencyColor)
+            binding.tvPrimaryMetric.text = formatted.primary
             binding.tvSecondaryMetric.setTextColor(pal.textSecondary)
-
-            if (breakdown.isExpired) {
-                binding.tvPrimaryMetric.text = "Done"
-                binding.tvSecondaryMetric.text = "Target reached"
-            } else if (showTotalHoursMode) {
-                val prefix = if (breakdown.isCountUp) "+" else ""
-                binding.tvPrimaryMetric.text =
-                    String.format(Locale.US, "%s%,dh", prefix, breakdown.totalHours)
-                binding.tvSecondaryMetric.text =
-                    String.format(Locale.US, "%02dm %02ds", breakdown.minutes, breakdown.seconds)
-            } else {
-                val prefix = if (breakdown.isCountUp) "+" else ""
-                binding.tvPrimaryMetric.text =
-                    String.format(Locale.US, "%s%dd", prefix, breakdown.days)
-                binding.tvSecondaryMetric.text = String.format(
-                    Locale.US,
-                    "%02dh %02dm %02ds",
-                    breakdown.hours,
-                    breakdown.minutes,
-                    breakdown.seconds
-                )
-            }
-
-            if (breakdown.isCountUp) {
-                binding.itemProgressBar.visibility = View.GONE
-            } else {
-                binding.itemProgressBar.visibility = View.VISIBLE
-                binding.itemProgressBar.setColors(
-                    track = pal.progressTrack,
-                    accentStart = ThemeManager.withAlpha(urgencyColor, 0xCC),
-                    accentEnd = urgencyColor
-                )
-                binding.itemProgressBar.setProgress(breakdown.progress)
-            }
+            binding.tvSecondaryMetric.text = formatted.secondary
         }
     }
 

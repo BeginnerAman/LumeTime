@@ -100,6 +100,7 @@ object CountdownEditorDialog {
             if (existing == null) R.string.add_countdown else R.string.edit_countdown
         )
         binding.etTitle.setText(existing?.title ?: "")
+        binding.etNote.setText(existing?.note ?: "")
         binding.templatesSection.visibility = if (existing == null) View.VISIBLE else View.GONE
 
         if (existing != null && onDelete != null) {
@@ -128,6 +129,10 @@ object CountdownEditorDialog {
             binding.etTitle.background = ThemeManager.pillDrawable(context, palette)
             binding.etTitle.setTextColor(palette.textPrimary)
             binding.etTitle.setHintTextColor(palette.textTertiary)
+
+            binding.etNote.background = ThemeManager.pillDrawable(context, palette)
+            binding.etNote.setTextColor(palette.textPrimary)
+            binding.etNote.setHintTextColor(palette.textTertiary)
 
             binding.modeSwitchContainer.background = ThemeManager.pillDrawable(context, palette)
             val modeBtns = listOf(
@@ -367,6 +372,7 @@ object CountdownEditorDialog {
             ThemeManager.performTapHaptic(it)
             val saveNow = PrecisionClockTicker.normalizeToWholeSecond(System.currentTimeMillis())
             val cleanTarget = PrecisionClockTicker.normalizeToWholeSecond(selectedCal.timeInMillis)
+            val rawNote = binding.etNote.text?.toString()?.trim().orEmpty()
             val item = CountdownItem(
                 id = existing?.id ?: UUID.randomUUID().toString(),
                 title = rawTitle,
@@ -381,7 +387,8 @@ object CountdownEditorDialog {
                 accentHex = accentHex,
                 isPinned = isPinned,
                 emoji = selectedIconId,
-                reminderEnabled = if (mode == CountdownMode.COUNT_UP) false else reminderEnabled
+                reminderEnabled = if (mode == CountdownMode.COUNT_UP) false else reminderEnabled,
+                note = rawNote
             )
             onSave(item)
             dialog.dismiss()

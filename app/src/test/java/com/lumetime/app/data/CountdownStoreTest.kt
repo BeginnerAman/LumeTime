@@ -156,4 +156,43 @@ class CountdownStoreTest {
         val exported = storeA.exportJson(now)
         assertEquals(3, CountdownJsonCodec.decode(exported).size)
     }
+
+    @Test
+    fun `filterAndSort filters by title note and category`() {
+        val now = 1_795_000_000_000L
+        val exam = CountdownItem(
+            id = "e1",
+            title = "Math Test",
+            targetEpochMillis = now + 5L * TimeCalculator.MILLIS_PER_DAY,
+            startEpochMillis = now,
+            category = CountdownCategory.EXAM,
+            note = "Hall Ticket 402"
+        )
+        val trip = CountdownItem(
+            id = "t1",
+            title = "Mountain Trip",
+            targetEpochMillis = now + 8L * TimeCalculator.MILLIS_PER_DAY,
+            startEpochMillis = now,
+            category = CountdownCategory.TRAVEL,
+            note = "Morning Bus"
+        )
+
+        val byNote = CountdownStore.filterAndSort(
+            listOf(exam, trip),
+            CountdownFilter.All,
+            CountdownSortMode.SOONEST,
+            now,
+            searchQuery = "ticket"
+        )
+        assertEquals(listOf("e1"), byNote.map { it.id })
+
+        val byCategory = CountdownStore.filterAndSort(
+            listOf(exam, trip),
+            CountdownFilter.All,
+            CountdownSortMode.SOONEST,
+            now,
+            searchQuery = "travel"
+        )
+        assertEquals(listOf("t1"), byCategory.map { it.id })
+    }
 }

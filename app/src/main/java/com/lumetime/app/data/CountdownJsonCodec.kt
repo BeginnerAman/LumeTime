@@ -29,6 +29,7 @@ object CountdownJsonCodec {
                 put("isPinned", item.isPinned)
                 put("emoji", item.emoji)
                 put("reminderEnabled", item.reminderEnabled)
+                put("note", item.note)
             }
             array.put(obj)
         }
@@ -66,7 +67,8 @@ object CountdownJsonCodec {
                         obj.optString("emoji", ""),
                         category
                     ).id,
-                    reminderEnabled = obj.optBoolean("reminderEnabled", false)
+                    reminderEnabled = obj.optBoolean("reminderEnabled", false),
+                    note = obj.optString("note", "").trim()
                 )
             )
         }

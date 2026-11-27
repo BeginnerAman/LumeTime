@@ -58,72 +58,52 @@
                 </LinearLayout>
 
                 <ImageView
+                    android:id="@+id/btnSearchToggle"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:layout_marginEnd="7dp"
+                    android:clickable="true"
+                    android:contentDescription="@string/search_hint"
+                    android:focusable="true"
+                    android:padding="9dp"
+                    android:src="@drawable/ic_search" />
+
+                <ImageView
                     android:id="@+id/btnBackup"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginEnd="8dp"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:layout_marginEnd="7dp"
                     android:clickable="true"
                     android:contentDescription="@string/backup_title"
                     android:focusable="true"
-                    android:padding="10dp"
+                    android:padding="9dp"
                     android:src="@drawable/ic_backup" />
 
-                <LinearLayout
+                <ImageView
                     android:id="@+id/btnWidgetsStudio"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp"
-                    android:layout_marginEnd="8dp"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:layout_marginEnd="7dp"
                     android:clickable="true"
+                    android:contentDescription="@string/widgets_label"
                     android:focusable="true"
-                    android:gravity="center"
-                    android:orientation="horizontal"
-                    android:paddingHorizontal="12dp">
+                    android:padding="9dp"
+                    android:src="@drawable/ic_widgets" />
 
-                    <ImageView
-                        android:id="@+id/ivWidgetsIcon"
-                        android:layout_width="17dp"
-                        android:layout_height="17dp"
-                        android:contentDescription="@string/widgets_label"
-                        android:src="@drawable/ic_widgets" />
-
-                    <TextView
-                        android:id="@+id/tvWidgetsButtonLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="5dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:text="@string/widgets_label"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <LinearLayout
+                <FrameLayout
                     android:id="@+id/btnThemePicker"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
                     android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:orientation="horizontal"
-                    android:paddingHorizontal="14dp">
+                    android:contentDescription="@string/choose_theme"
+                    android:focusable="true">
 
-                    <ImageView
-                        android:id="@+id/ivPaletteIcon"
+                    <View
+                        android:id="@+id/viewThemeSwatch"
                         android:layout_width="18dp"
                         android:layout_height="18dp"
-                        android:contentDescription="@string/choose_theme"
-                        android:src="@drawable/ic_palette" />
-
-                    <TextView
-                        android:id="@+id/tvThemeButtonLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="6dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:text="@string/choose_theme"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
+                        android:layout_gravity="center" />
+                </FrameLayout>
             </LinearLayout>
 
             <!-- Year Pulse Hero Glass Card -->
@@ -163,6 +143,20 @@
                         android:textSize="11sp"
                         android:textStyle="bold" />
 
+                    <TextView
+                        android:id="@+id/btnToggleYearDots"
+                        android:layout_width="wrap_content"
+                        android:layout_height="26dp"
+                        android:layout_marginStart="6dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:fontFamily="sans-serif-medium"
+                        android:gravity="center"
+                        android:paddingHorizontal="10dp"
+                        android:text="@string/dots_show"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
                     <ImageView
                         android:id="@+id/btnShareYearPulse"
                         android:layout_width="28dp"
@@ -179,7 +173,7 @@
                     android:id="@+id/yearMetricContainer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="8dp"
                     android:gravity="bottom"
                     android:orientation="horizontal">
 
@@ -190,7 +184,7 @@
                         android:fontFamily="sans-serif-medium"
                         android:includeFontPadding="false"
                         android:letterSpacing="-0.03"
-                        android:textSize="40sp"
+                        android:textSize="32sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -198,23 +192,24 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
-                        android:layout_marginBottom="5dp"
+                        android:layout_marginBottom="4dp"
                         android:fontFamily="sans-serif-medium"
-                        android:textSize="15sp" />
+                        android:textSize="14sp" />
                 </LinearLayout>
 
                 <TextView
                     android:id="@+id/tvYearSecondaryCaption"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
+                    android:layout_marginTop="2dp"
                     android:textSize="12sp" />
 
                 <com.lumetime.app.ui.YearDotMatrixView
                     android:id="@+id/yearDotMatrix"
                     android:layout_width="match_parent"
                     android:layout_height="96dp"
-                    android:layout_marginTop="12dp" />
+                    android:layout_marginTop="12dp"
+                    android:visibility="gone" />
 
                 <com.lumetime.app.ui.GlassProgressBar
                     android:id="@+id/yearProgressBar"
@@ -531,6 +526,50 @@
                         android:textSize="12sp"
                         android:textStyle="bold" />
                 </LinearLayout>
+            </LinearLayout>
+
+            <!-- Collapsible Glass Search Pill -->
+            <LinearLayout
+                android:id="@+id/searchPill"
+                android:layout_width="match_parent"
+                android:layout_height="42dp"
+                android:layout_marginTop="10dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="14dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:id="@+id/ivSearchPillIcon"
+                    android:layout_width="17dp"
+                    android:layout_height="17dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_search" />
+
+                <EditText
+                    android:id="@+id/etSearch"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:background="@null"
+                    android:hint="@string/search_hint"
+                    android:imeOptions="actionSearch"
+                    android:importantForAutofill="no"
+                    android:inputType="text"
+                    android:maxLines="1"
+                    android:textSize="14sp" />
+
+                <ImageView
+                    android:id="@+id/btnClearSearch"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:clickable="true"
+                    android:contentDescription="@null"
+                    android:focusable="true"
+                    android:padding="5dp"
+                    android:src="@drawable/ic_close"
+                    android:visibility="gone" />
             </LinearLayout>
 
             <!-- Category Filter Chips -->

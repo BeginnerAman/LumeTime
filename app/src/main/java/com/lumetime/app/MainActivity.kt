@@ -7,6 +7,9 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.text.Editable
+import android.text.TextWatcher
+import android.transition.TransitionManager
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
@@ -29,6 +32,7 @@ import com.lumetime.app.model.CountdownCategory
 import com.lumetime.app.model.CountdownItem
 import com.lumetime.app.ui.BackupDialog
 import com.lumetime.app.ui.CountdownAdapter
+import com.lumetime.app.ui.CountdownDisplayFormat
 import com.lumetime.app.ui.CountdownEditorDialog
 import com.lumetime.app.ui.FilterChipAdapter
 import com.lumetime.app.ui.FocusAnimations
@@ -108,8 +112,11 @@ class MainActivity : AppCompatActivity() {
     private var heroItem: CountdownItem? = null
     private var activeFilter: CountdownFilter = CountdownFilter.All
     private var sortMode: CountdownSortMode = CountdownSortMode.SOONEST
-    private var showTotalHoursMode: Boolean = false
+    private var displayFormat: CountdownDisplayFormat = CountdownDisplayFormat.DAYS_HOURS
     private var metricMode: YearPulseMetricMode = YearPulseMetricMode.DAYS_LEFT
+    private var yearDotsExpanded: Boolean = false
+    private var searchVisible: Boolean = false
+    private var searchQuery: String = ""
     private var recentlyDeletedItem: CountdownItem? = null
     private var lastHeroId: String? = null
 
@@ -152,7 +159,13 @@ class MainActivity : AppCompatActivity() {
             sortMode = CountdownSortMode.entries.getOrElse(savedSort) {
                 CountdownSortMode.SOONEST
             }
-            showTotalHoursMode = savedInstanceState.getBoolean(KEY_HOURS_MODE, false)
+            val savedFormat = savedInstanceState.getInt(KEY_DISPLAY_FORMAT, 0)
+            displayFormat = CountdownDisplayFormat.entries.getOrElse(savedFormat) {
+                CountdownDisplayFormat.DAYS_HOURS
+            }
+            yearDotsExpanded = savedInstanceState.getBoolean(KEY_DOTS_EXPANDED, false)
+            searchVisible = savedInstanceState.getBoolean(KEY_SEARCH_VISIBLE, false)
+            searchQuery = savedInstanceState.getString(KEY_SEARCH_QUERY, "")
         }
 
         store = CountdownStore.create(this)
@@ -160,6 +173,11 @@ class MainActivity : AppCompatActivity() {
         setupInsets()
         setupLists()
         setupInteractions()
+        applyYearDotsVisibility(animate = false)
+        applySearchVisibility(animate = false)
+        if (searchQuery.isNotEmpty()) {
+            binding.etSearch.setText(searchQuery)
+        }
         reloadCountdowns(animateHeroRoll = false)
         applyTheme(animate = false)
     }
@@ -168,7 +186,9 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
         reloadCountdowns(animateHeroRoll = false, forceReloadFromDisk = true)
         binding.ambientGlowView.startBreathing()
-        binding.yearDotMatrix.startPulse()
+        if (yearDotsExpanded) {
+            binding.yearDotMatrix.startPulse()
+        }
         mainHandler.removeCallbacks(tickRunnable)
         mainHandler.post(tickRunnable)
     }
@@ -185,7 +205,10 @@ class MainActivity : AppCompatActivity() {
         super.onSaveInstanceState(outState)
         outState.putInt(KEY_METRIC_MODE, metricMode.ordinal)
         outState.putInt(KEY_SORT_MODE, sortMode.ordinal)
-        outState.putBoolean(KEY_HOURS_MODE, showTotalHoursMode)
+        outState.putInt(KEY_DISPLAY_FORMAT, displayFormat.ordinal)
+        outState.putBoolean(KEY_DOTS_EXPANDED, yearDotsExpanded)
+        outState.putBoolean(KEY_SEARCH_VISIBLE, searchVisible)
+        outState.putString(KEY_SEARCH_QUERY, searchQuery)
     }
 
     private fun captureBaseDimensions() {
@@ -245,19 +268,57 @@ class MainActivity : AppCompatActivity() {
                 WidgetScheduler.refreshAllWidgets(this)
             }
         )
-        countdownAdapter.setShowTotalHours(showTotalHoursMode)
+        countdownAdapter.setDisplayFormat(displayFormat)
         binding.rvCountdowns.layoutManager = LinearLayoutManager(this)
         binding.rvCountdowns.adapter = countdownAdapter
         binding.rvCountdowns.itemAnimator = null
     }
 
     private fun setupInteractions() {
+        FocusAnimations.attachGlassPress(binding.btnSearchToggle, 0.92f)
         FocusAnimations.attachGlassPress(binding.btnBackup, 0.92f)
-        FocusAnimations.attachGlassPress(binding.btnWidgetsStudio, 0.95f)
-        FocusAnimations.attachGlassPress(binding.btnThemePicker, 0.95f)
+        FocusAnimations.attachGlassPress(binding.btnWidgetsStudio, 0.92f)
+        FocusAnimations.attachGlassPress(binding.btnThemePicker, 0.92f)
         FocusAnimations.attachGlassPress(binding.cardYearPulse, 0.985f)
         FocusAnimations.attachGlassPress(binding.cardHeroCountdown, 0.985f)
         FocusAnimations.attachGlassPress(binding.fabAddCountdown, 0.94f)
+
+        binding.btnSearchToggle.setOnClickListener { view ->
+            ThemeManager.performSoftTick(view)
+            searchVisible = !searchVisible
+            if (!searchVisible) {
+                searchQuery = ""
+                binding.etSearch.setText("")
+            }
+            applySearchVisibility(animate = true)
+            if (searchVisible) {
+                binding.etSearch.requestFocus()
+            }
+        }
+
+        binding.etSearch.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+            override fun afterTextChanged(s: Editable?) {
+                val next = s?.toString().orEmpty()
+                binding.btnClearSearch.visibility = if (next.isEmpty()) View.GONE else View.VISIBLE
+                if (searchQuery != next) {
+                    searchQuery = next
+                    refreshListOnly()
+                }
+            }
+        })
+
+        binding.btnClearSearch.setOnClickListener { view ->
+            ThemeManager.performSoftTick(view)
+            binding.etSearch.setText("")
+        }
+
+        binding.btnToggleYearDots.setOnClickListener { view ->
+            ThemeManager.performSoftTick(view)
+            yearDotsExpanded = !yearDotsExpanded
+            applyYearDotsVisibility(animate = true)
+        }
 
         binding.btnBackup.setOnClickListener { view ->
             ThemeManager.performTapHaptic(view)
@@ -321,8 +382,8 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnToggleHours.setOnClickListener { view ->
             ThemeManager.performSoftTick(view)
-            showTotalHoursMode = !showTotalHoursMode
-            countdownAdapter.setShowTotalHours(showTotalHoursMode)
+            displayFormat = displayFormat.next()
+            countdownAdapter.setDisplayFormat(displayFormat)
             updateToolbarLabels()
         }
 
@@ -407,15 +468,43 @@ class MainActivity : AppCompatActivity() {
         updateToolbarLabels()
     }
 
+    private fun applyYearDotsVisibility(animate: Boolean) {
+        if (animate) {
+            TransitionManager.beginDelayedTransition(binding.contentColumn)
+        }
+        binding.yearDotMatrix.visibility = if (yearDotsExpanded) View.VISIBLE else View.GONE
+        binding.btnToggleYearDots.text = getString(
+            if (yearDotsExpanded) R.string.dots_hide else R.string.dots_show
+        )
+        if (yearDotsExpanded) {
+            binding.yearDotMatrix.startPulse()
+        } else {
+            binding.yearDotMatrix.stopPulse()
+        }
+    }
+
+    private fun applySearchVisibility(animate: Boolean) {
+        if (animate) {
+            TransitionManager.beginDelayedTransition(binding.contentColumn)
+        }
+        binding.searchPill.visibility = if (searchVisible) View.VISIBLE else View.GONE
+    }
+
     private fun refreshListOnly(now: Long = System.currentTimeMillis()) {
-        val filtered = CountdownStore.filterAndSort(allItems, activeFilter, sortMode, now)
+        val filtered = CountdownStore.filterAndSort(
+            allItems,
+            activeFilter,
+            sortMode,
+            now,
+            searchQuery
+        )
         countdownAdapter.submitList(filtered)
         binding.cardEmptyState.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
         binding.rvCountdowns.visibility = if (filtered.isEmpty()) View.GONE else View.VISIBLE
     }
 
     private fun updateToolbarLabels() {
-        binding.tvHoursModeLabel.text = if (showTotalHoursMode) "Hours" else "Days"
+        binding.tvHoursModeLabel.text = displayFormat.shortLabel
         binding.tvSortModeLabel.text = sortMode.label
     }
 
@@ -448,22 +537,31 @@ class MainActivity : AppCompatActivity() {
         binding.tvBrandTitle.setTextColor(palette.textPrimary)
         binding.tvTodayDate.setTextColor(palette.textSecondary)
 
+        binding.btnSearchToggle.background = ThemeManager.pillDrawable(this, palette)
+        binding.btnSearchToggle.setColorFilter(palette.accent)
+
         binding.btnBackup.background = ThemeManager.pillDrawable(this, palette)
         binding.btnBackup.setColorFilter(palette.accent)
 
         binding.btnWidgetsStudio.background = ThemeManager.pillDrawable(this, palette)
-        binding.ivWidgetsIcon.setColorFilter(palette.accent)
-        binding.tvWidgetsButtonLabel.setTextColor(palette.textPrimary)
+        binding.btnWidgetsStudio.setColorFilter(palette.accent)
 
         binding.btnThemePicker.background = ThemeManager.pillDrawable(this, palette)
-        binding.ivPaletteIcon.setColorFilter(palette.accent)
-        binding.tvThemeButtonLabel.setTextColor(palette.textPrimary)
+        binding.viewThemeSwatch.background = ThemeManager.swatchOrbDrawable(this, palette.theme)
+
+        binding.searchPill.background = ThemeManager.pillDrawable(this, palette)
+        binding.ivSearchPillIcon.setColorFilter(palette.accent)
+        binding.etSearch.setTextColor(palette.textPrimary)
+        binding.etSearch.setHintTextColor(palette.textTertiary)
+        binding.btnClearSearch.setColorFilter(palette.textSecondary)
 
         // Year Pulse Card
         binding.cardYearPulse.background = ThemeManager.cardDrawable(this, palette, isHero = true)
         binding.tvYearPulseTitle.setTextColor(palette.accent)
         binding.tvDayOfYearBadge.background = ThemeManager.tagDrawable(this, palette)
         binding.tvDayOfYearBadge.setTextColor(palette.accent)
+        binding.btnToggleYearDots.background = ThemeManager.pillDrawable(this, palette)
+        binding.btnToggleYearDots.setTextColor(palette.accent)
         binding.btnShareYearPulse.background = ThemeManager.pillDrawable(this, palette)
         binding.btnShareYearPulse.setColorFilter(palette.accent)
         binding.tvYearPrimaryValue.setTextColor(palette.textPrimary)
@@ -632,6 +730,9 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val KEY_METRIC_MODE = "metric_mode"
         private const val KEY_SORT_MODE = "sort_mode"
-        private const val KEY_HOURS_MODE = "hours_mode"
+        private const val KEY_DISPLAY_FORMAT = "display_format"
+        private const val KEY_DOTS_EXPANDED = "dots_expanded"
+        private const val KEY_SEARCH_VISIBLE = "search_visible"
+        private const val KEY_SEARCH_QUERY = "search_query"
     }
 }

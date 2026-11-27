@@ -208,12 +208,24 @@ class CountdownStore(
             items: List<CountdownItem>,
             filter: CountdownFilter,
             sortMode: CountdownSortMode,
-            nowMillis: Long
+            nowMillis: Long,
+            searchQuery: String = ""
         ): List<CountdownItem> {
-            val filtered = when (filter) {
+            val byFilter = when (filter) {
                 CountdownFilter.All -> items
                 CountdownFilter.CountUp -> items.filter { it.mode == CountdownMode.COUNT_UP }
                 is CountdownFilter.Category -> items.filter { it.category == filter.category }
+            }
+
+            val q = searchQuery.trim().lowercase()
+            val filtered = if (q.isEmpty()) {
+                byFilter
+            } else {
+                byFilter.filter { item ->
+                    item.title.lowercase().contains(q) ||
+                        item.note.lowercase().contains(q) ||
+                        item.category.label.lowercase().contains(q)
+                }
             }
 
             return when (sortMode) {

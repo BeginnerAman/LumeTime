@@ -28,6 +28,10 @@
     <string name="mode_countup">Count-Up</string>
     <string name="pin_to_hero">Pin as Hero Focus</string>
     <string name="title_hint">Event name (e.g. Final Exam)</string>
+    <string name="note_hint">Note (optional, e.g. Room 12 • 9 AM)</string>
+    <string name="search_hint">Search countdowns or notes…</string>
+    <string name="dots_show">Dots</string>
+    <string name="dots_hide">Hide</string>
     <string name="quick_templates">Quick Templates</string>
     <string name="zen_focus_mode">Zen Focus</string>
     <string name="keep_screen_on">Awake</string>

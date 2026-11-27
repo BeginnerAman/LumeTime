@@ -244,6 +244,7 @@ class FocusClockActivity : AppCompatActivity() {
 
         binding.focusCard.background = ThemeManager.cardDrawable(this, palette, isHero = true)
         binding.tvFocusTitle.setTextColor(palette.textPrimary)
+        binding.tvFocusNote.setTextColor(palette.textSecondary)
         binding.tvFocusRingPercent.setTextColor(palette.textPrimary)
         binding.tvFocusTargetDate.setTextColor(palette.textSecondary)
 
@@ -297,6 +298,12 @@ class FocusClockActivity : AppCompatActivity() {
         binding.ivFocusIcon.setImageResource(item.resolveIcon().drawableRes)
         binding.ivFocusIcon.setColorFilter(displayAccent)
         binding.tvFocusTitle.text = item.title
+        if (item.note.isNotBlank()) {
+            binding.tvFocusNote.visibility = android.view.View.VISIBLE
+            binding.tvFocusNote.text = item.note
+        } else {
+            binding.tvFocusNote.visibility = android.view.View.GONE
+        }
 
         binding.focusProgressRing.setColors(
             track = palette.progressTrack,
