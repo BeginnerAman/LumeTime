@@ -175,7 +175,6 @@ object FocusTimerDialog {
                                 )
                                 saveAndNotify()
                                 renderPresets()
-                                renderDynamicTick()
                             }
                         }
                         .setNegativeButton("Cancel", null)
